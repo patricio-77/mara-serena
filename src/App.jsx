@@ -110,21 +110,13 @@ const TODOS_TURNOS = [
 function Login({ onLogin }) {
   const [paso, setPaso] = useState(1);
   const [cel, setCel] = useState("");
-  const [cod, setCod] = useState("");
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [load, setLoad] = useState(false);
-  const [esNuevo, setEsNuevo] = useState(false);
 
-  const enviar = () => {
-    if(cel.length<6) return;
+  const verificarCelular = async () => {
+    if(cel.length<8) return;
     setLoad(true);
-    setTimeout(()=>{setLoad(false);setPaso(2);},1200);
-  };
-  const verif = async () => {
-    if(cod.length<4) return;
-    setLoad(true);
-    // Check if paciente exists in DB
     const { data } = await supabase
       .from("pacientes")
       .select("*")
@@ -132,13 +124,12 @@ function Login({ onLogin }) {
       .single();
     setLoad(false);
     if(data) {
-      // Existing patient - login directly
       onLogin("paciente", data);
     } else {
-      // New patient - ask for name
-      setPaso(3);
+      setPaso(2);
     }
   };
+
   const completarPerfil = async () => {
     if(nombre.length<2||apellido.length<2) return;
     setLoad(true);
@@ -165,30 +156,18 @@ function Login({ onLogin }) {
       <div style={{...S.card, padding:"28px 24px"}}>
         {paso===1 && <>
           <h2 style={{ fontSize:21, color:"#2C2420", fontWeight:600, margin:"0 0 6px" }}>Ingresá tu celular</h2>
-          <p style={{ fontSize:13, color:"#A89890", margin:"0 0 24px", fontFamily:"'Raleway',sans-serif", lineHeight:1.6 }}>Te enviamos un código por WhatsApp. Solo lo necesitás una vez.</p>
+          <p style={{ fontSize:13, color:"#A89890", margin:"0 0 24px", fontFamily:"'Raleway',sans-serif", lineHeight:1.6 }}>Ingresá tu número para acceder a tu cuenta.</p>
           <label style={{...S.lbl}}>Número de WhatsApp</label>
           <div style={{ display:"flex", gap:8, marginBottom:20 }}>
             <div style={{...S.inp, width:64, flexShrink:0, textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", color:"#6B5C56" }}>+54</div>
             <input style={{...S.inp}} placeholder="9 11 1234-5678" value={cel} onChange={e=>setCel(e.target.value)} type="tel"/>
           </div>
-          <button style={{...S.btnP}} onClick={enviar} disabled={load}>
-            {load?"Enviando...":<span style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}><Ico n="wa" size={16} color="white"/> Enviar código</span>}
+          <button style={{...S.btnP}} onClick={verificarCelular} disabled={load||cel.length<8}>
+            {load?"Verificando...":"Ingresar"}
           </button>
         </>}
 
         {paso===2 && <>
-          <button onClick={()=>setPaso(1)} style={{ background:"none", border:"none", cursor:"pointer", color:"#A89890", display:"flex", alignItems:"center", gap:4, marginBottom:18, padding:0 }}>
-            <Ico n="bck" size={15} color="#A89890"/><span style={{ fontFamily:"'Raleway',sans-serif", fontSize:12 }}>Cambiar número</span>
-          </button>
-          <h2 style={{ fontSize:21, color:"#2C2420", fontWeight:600, margin:"0 0 6px" }}>Código de verificación</h2>
-          <p style={{ fontSize:13, color:"#A89890", margin:"0 0 24px", fontFamily:"'Raleway',sans-serif", lineHeight:1.6 }}>Código enviado a <strong style={{ color:"#2C2420" }}>+54 {cel}</strong></p>
-          <label style={{...S.lbl}}>Código de 6 dígitos</label>
-          <input style={{...S.inp, fontSize:28, textAlign:"center", letterSpacing:"0.4em", marginBottom:20}} placeholder="······" value={cod} onChange={e=>setCod(e.target.value)} maxLength={6} type="number"/>
-          <button style={{...S.btnP}} onClick={verif} disabled={load}>{load?"Verificando...":"Ingresar"}</button>
-          <p style={{ textAlign:"center", fontSize:12, color:"#A89890", margin:"16px 0 0", fontFamily:"'Raleway',sans-serif" }}>¿No llegó? <span style={{ color:"#8FAF8A", cursor:"pointer", fontWeight:700 }}>Reenviar</span></p>
-        </>}
-
-        {paso===3 && <>
           <h2 style={{ fontSize:21, color:"#2C2420", fontWeight:600, margin:"0 0 6px" }}>¡Bienvenida!</h2>
           <p style={{ fontSize:13, color:"#A89890", margin:"0 0 24px", fontFamily:"'Raleway',sans-serif", lineHeight:1.6 }}>Completá tus datos para terminar de registrarte.</p>
           <label style={{...S.lbl}}>Nombre</label>
