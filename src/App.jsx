@@ -364,9 +364,9 @@ function AdminTurnos() {
       <div style={{ padding:"16px 20px 0" }}>
         {/* Stats */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16 }}>
-          {[{l:"Total",v:stats.tot,c:"#2C2420"},{l:"Confirm.",v:stats.conf,c:"#7BA68A"},{l:"Pendient.",v:stats.pend,c:"#C8A46A"},{l:"Libres",v:stats.libres,c:"#A89890"}].map(s=>(
+          {[{l:"Total",v:stats.tot,col:"#2C2420"},{l:"Confirm.",v:stats.conf,col:"#7BA68A"},{l:"Pendient.",v:stats.pend,col:"#C8A46A"},{l:"Libres",v:stats.libres,col:"#A89890"}].map(s=>(
             <div key={s.l} style={{...S.card, padding:"12px 8px", textAlign:"center", marginBottom:0}}>
-              <p style={{ fontSize:22, color:s.c, margin:0, fontFamily:"'Raleway',sans-serif", fontWeight:800 }}>{s.v}</p>
+              <p style={{ fontSize:22, color:s.col, margin:0, fontFamily:"'Raleway',sans-serif", fontWeight:800 }}>{s.v}</p>
               <p style={{ fontSize:8, color:"#A89890", margin:"2px 0 0", fontFamily:"'Raleway',sans-serif", textTransform:"uppercase", letterSpacing:"0.06em" }}>{s.l}</p>
             </div>
           ))}
@@ -440,9 +440,9 @@ function AdminDisponibilidad() {
 
 function AdminPacientes() {
   const pacs = [
-    {n:"María López",c:"+54 9 11 1234-5678",t:3,u:"19 may"},{n:"Sofía Martínez",c:"+54 9 11 8765-4321",t:5,u:"21 may"},
-    {n:"Ana Rodríguez",c:"+54 9 11 5555-1234",t:1,u:"16 may"},{n:"Laura Fernández",c:"+54 9 11 9999-0000",t:2,u:"14 may"},
-    {n:"Carla Ruiz",c:"+54 9 11 3333-7777",t:4,u:"15 may"},
+    {nom:"María López",cel:"+54 9 11 1234-5678",t:3,u:"19 may"},{nom:"Sofía Martínez",cel:"+54 9 11 8765-4321",t:5,u:"21 may"},
+    {nom:"Ana Rodríguez",cel:"+54 9 11 5555-1234",t:1,u:"16 may"},{nom:"Laura Fernández",cel:"+54 9 11 9999-0000",t:2,u:"14 may"},
+    {nom:"Carla Ruiz",cel:"+54 9 11 3333-7777",t:4,u:"15 may"},
   ];
   return (
     <div style={{ paddingBottom:100 }}>
@@ -450,8 +450,8 @@ function AdminPacientes() {
       <div style={{ padding:20 }}>
         {pacs.map((p,i)=>(
           <div key={i} style={{...S.card, display:"flex", alignItems:"center", gap:14}}>
-            <div style={{ width:44, height:44, borderRadius:"50%", background:"#E8D5C8", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}><span style={{ fontSize:18, color:"#2C2420", fontWeight:600 }}>{p.n[0]}</span></div>
-            <div style={{ flex:1 }}><p style={{ fontSize:15, color:"#2C2420", margin:"0 0 2px", fontWeight:600 }}>{p.n}</p><p style={{ fontSize:12, color:"#A89890", margin:0, fontFamily:"'Raleway',sans-serif" }}>{p.c}</p></div>
+            <div style={{ width:44, height:44, borderRadius:"50%", background:"#E8D5C8", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}><span style={{ fontSize:18, color:"#2C2420", fontWeight:600 }}>{p.nom[0]}</span></div>
+            <div style={{ flex:1 }}><p style={{ fontSize:15, color:"#2C2420", margin:"0 0 2px", fontWeight:600 }}>{p.nom}</p><p style={{ fontSize:12, color:"#A89890", margin:0, fontFamily:"'Raleway',sans-serif" }}>{p.cel}</p></div>
             <div style={{ textAlign:"right" }}><p style={{ fontSize:14, color:"#2C2420", margin:"0 0 2px", fontFamily:"'Raleway',sans-serif", fontWeight:700 }}>{p.t}</p><p style={{ fontSize:10, color:"#A89890", margin:0, fontFamily:"'Raleway',sans-serif", textTransform:"uppercase" }}>{p.u}</p></div>
           </div>
         ))}
