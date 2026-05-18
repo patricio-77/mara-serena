@@ -74,6 +74,20 @@ const DISPONIBLES = [
   { fecha:"Mie 28 may", slots:["09:00","10:00","17:00"] },
 ];
 
+const formatFecha = (fecha) => {
+  if(!fecha) return "";
+  if(fecha.includes("-") && fecha.length === 10) {
+    const [anio, mes, dia] = fecha.split("-");
+    return dia + "/" + mes;
+  }
+  return fecha;
+};
+
+const formatHora = (hora) => {
+  if(!hora) return "";
+  return hora.slice(0, 5);
+};
+
 function Login({ onLogin }) {
   const [paso, setPaso] = useState(1);
   const [cel, setCel] = useState("");
@@ -170,7 +184,7 @@ function TurnosDisponibles({ paciente }) {
       </div>
       <h2 style={{ fontSize:28, color:"#2C2420", fontWeight:600, margin:"0 0 8px" }}>Turno reservado!</h2>
       <p style={{ fontSize:15, color:"#6B5C56", fontFamily:"'Raleway',sans-serif", lineHeight:1.7, margin:"0 0 16px" }}>
-        <strong style={{ color:"#2C2420" }}>{DISPONIBLES[dIdx]?.fecha} - {horaSelec} hs</strong>
+        <strong style={{ color:"#2C2420" }}>{DISPONIBLES[dIdx]?.fecha} - {formatHora(horaSelec)} hs</strong>
       </p>
       <div style={{...S.card, maxWidth:300, margin:"0 0 24px", textAlign:"left"}}>
         <p style={{ fontSize:12, color:"#6B5C56", fontFamily:"'Raleway',sans-serif", margin:"0 0 10px", fontWeight:600 }}>Recordá estas indicaciones:</p>
@@ -213,7 +227,7 @@ function TurnosDisponibles({ paciente }) {
         {horaSelec && (
           <div style={{...S.card, background:"#EBF1EA", border:"1px solid #B8CEB5", marginTop:8}}>
             <p style={{...S.lbl, color:"#6D8F68", marginBottom:4}}>Turno seleccionado</p>
-            <p style={{ fontSize:15, color:"#2C2420", margin:"0 0 16px", fontWeight:600 }}>{DISPONIBLES[dIdx]?.fecha} - {horaSelec} hs</p>
+            <p style={{ fontSize:15, color:"#2C2420", margin:"0 0 16px", fontWeight:600 }}>{DISPONIBLES[dIdx]?.fecha} - {formatHora(horaSelec)} hs</p>
             <label style={{...S.lbl}}>Mensaje para Mara <span style={{ color:"#B8CEB5" }}>(opcional)</span></label>
             <textarea style={{...S.inp, resize:"none", height:80, fontSize:14, lineHeight:1.5}} placeholder="Ej: queria consultar sobre un tratamiento..." value={mensaje} onChange={e=>setMensaje(e.target.value)}/>
             <button style={{...S.btnP, marginTop:16}} onClick={confirmar} disabled={load}>{load?"Guardando...":"Confirmar reserva"}</button>
@@ -242,11 +256,11 @@ function MisTurnos() {
       <div style={{ padding:20 }}>
         <div style={{...S.card}}>
           <Badge estado={det.estado}/>
-          <h2 style={{ fontSize:22, color:"#2C2420", fontWeight:600, margin:"12px 0 0" }}>{det.fecha}</h2>
+          <h2 style={{ fontSize:22, color:"#2C2420", fontWeight:600, margin:"12px 0 0" }}>{formatFecha(det.fecha)}</h2>
           <div style={{ height:1, background:"#DDD0C8", margin:"16px 0" }}/>
           <div style={{ display:"flex", gap:24 }}>
-            <div><p style={{...S.lbl}}>Fecha</p><p style={{ fontSize:15, color:"#2C2420", margin:0, fontFamily:"'Raleway',sans-serif", fontWeight:600 }}>{det.fecha}</p></div>
-            <div><p style={{...S.lbl}}>Hora</p><p style={{ fontSize:15, color:"#2C2420", margin:0, fontFamily:"'Raleway',sans-serif", fontWeight:600 }}>{det.hora} hs</p></div>
+            <div><p style={{...S.lbl}}>Fecha</p><p style={{ fontSize:15, color:"#2C2420", margin:0, fontFamily:"'Raleway',sans-serif", fontWeight:600 }}>{formatFecha(det.fecha)}</p></div>
+            <div><p style={{...S.lbl}}>Hora</p><p style={{ fontSize:15, color:"#2C2420", margin:0, fontFamily:"'Raleway',sans-serif", fontWeight:600 }}>{formatHora(det.hora)} hs</p></div>
           </div>
         </div>
         {det.estado !== "cancelado" && <button style={{...S.btnD, width:"100%", marginTop:4}}>Cancelar turno</button>}
@@ -263,8 +277,8 @@ function MisTurnos() {
         ) : turnos.map(trn => (
           <div key={trn.id} style={{...S.card, cursor:"pointer"}} onClick={()=>setDet(trn)}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-              <div style={{ flex:1, paddingRight:12 }}><Badge estado={trn.estado}/><h3 style={{ fontSize:16, color:"#2C2420", fontWeight:600, margin:"10px 0 4px" }}>{trn.fecha}</h3></div>
-              <div style={{ textAlign:"right" }}><p style={{ fontSize:16, color:"#2C2420", fontWeight:700, margin:"0 0 2px", fontFamily:"'Raleway',sans-serif" }}>{trn.hora} hs</p></div>
+              <div style={{ flex:1, paddingRight:12 }}><Badge estado={trn.estado}/><h3 style={{ fontSize:16, color:"#2C2420", fontWeight:600, margin:"10px 0 4px" }}>{formatFecha(trn.fecha)}</h3></div>
+              <div style={{ textAlign:"right" }}><p style={{ fontSize:16, color:"#2C2420", fontWeight:700, margin:"0 0 2px", fontFamily:"'Raleway',sans-serif" }}>{formatHora(trn.hora)} hs</p></div>
             </div>
           </div>
         ))}
@@ -296,7 +310,7 @@ function AdminTurnos() {
       <div style={{...S.header, display:"flex", alignItems:"center", gap:14}}>
         <div style={{...S.hAccent}}/>
         <button onClick={()=>setSel(null)} style={{ background:"none", border:"none", cursor:"pointer", padding:0, zIndex:1 }}><IcoSVG name="back" size={20} color="#2C2420"/></button>
-        <div style={{ zIndex:1 }}><h1 style={{...S.hTitle}}>{sel.fecha} - {sel.hora}</h1><p style={{...S.hSub}}>Detalle</p></div>
+        <div style={{ zIndex:1 }}><h1 style={{...S.hTitle}}>{formatFecha(sel.fecha)} - {formatHora(sel.hora)}</h1><p style={{...S.hSub}}>Detalle</p></div>
       </div>
       <div style={{ padding:20 }}>
         <div style={{...S.card}}>
@@ -341,10 +355,10 @@ function AdminTurnos() {
         : Object.keys(porFecha).length === 0 ? <p style={{ color:"#A89890", fontFamily:"'Raleway',sans-serif", textAlign:"center", marginTop:40 }}>No hay turnos</p>
         : Object.entries(porFecha).map(([fecha, trns]) => (
           <div key={fecha} style={{ marginBottom:8 }}>
-            <p style={{...S.lbl, marginBottom:8}}>{fecha}</p>
+            <p style={{...S.lbl, marginBottom:8}}>{formatFecha(fecha)}</p>
             {trns.map(trn => (
               <div key={trn.id} style={{...S.card, cursor:"pointer", display:"flex", alignItems:"center", gap:12, padding:"14px 16px", marginBottom:8}} onClick={()=>setSel(trn)}>
-                <p style={{ fontSize:14, color:"#2C2420", fontWeight:700, margin:0, fontFamily:"'Raleway',sans-serif", minWidth:44 }}>{trn.hora}</p>
+                <p style={{ fontSize:14, color:"#2C2420", fontWeight:700, margin:0, fontFamily:"'Raleway',sans-serif", minWidth:44 }}>{formatHora(trn.hora)}</p>
                 <div style={{ width:1, height:32, background:"#DDD0C8" }}/>
                 <div style={{ flex:1 }}>
                   {trn.pacientes ? <><p style={{ fontSize:14, color:"#2C2420", margin:"0 0 2px", fontWeight:600 }}>{trn.pacientes.nombre} {trn.pacientes.apellido}</p></> : <p style={{ fontSize:13, color:"#A89890", margin:0, fontFamily:"'Raleway',sans-serif" }}>Sin paciente</p>}
@@ -394,13 +408,13 @@ function AdminDisponibilidad() {
         {Object.entries(porFecha).map(([fecha, sls]) => (
           <div key={fecha} style={{...S.card}}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-              <p style={{ fontSize:15, color:"#2C2420", margin:0, fontWeight:600 }}>{fecha}</p>
-              <span style={{ fontSize:11, fontFamily:"'Raleway',sans-serif", fontWeight:700, color:"#6D8F68", background:"#EBF1EA", padding:"3px 10px", borderRadius:50 }}>{sls.length} slots</span>
+              <p style={{ fontSize:15, color:"#2C2420", margin:0, fontWeight:600 }}>{formatFecha(fecha)}</p>
+              <span style={{ fontSize:11, fontFamily:"'Raleway',sans-serif", fontWeight:700, color:"#6D8F68", background:"#EBF1EA", padding:"3px 10px", borderRadius:50 }}>{sls.length} horarios</span>
             </div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
               {sls.map(sl => (
                 <div key={sl.id} style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 12px", borderRadius:50, background:"#F5EDE6", border:"1px solid #DDD0C8" }}>
-                  <span style={{ fontSize:12, fontFamily:"'Raleway',sans-serif", color:"#2C2420", fontWeight:600 }}>{sl.hora}</span>
+                  <span style={{ fontSize:12, fontFamily:"'Raleway',sans-serif", color:"#2C2420", fontWeight:600 }}>{formatHora(sl.hora)}</span>
                   <button onClick={()=>eliminar(sl.id)} style={{ background:"none", border:"none", cursor:"pointer", color:"#A89890", padding:0, fontSize:14, lineHeight:1 }}>x</button>
                 </div>
               ))}
