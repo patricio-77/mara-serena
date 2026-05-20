@@ -178,10 +178,13 @@ function TurnosDisponibles({ paciente }) {
   const confirmar = async () => {
     if(!horaSelec || dIdx===null) return;
     setLoad(true);
+    const fechaSel = Object.keys(porFecha)[dIdx];
     const slotsDia = Object.values(porFecha)[dIdx];
-    const slotSel = slotsDia?.find(sl => sl.hora === horaSelec);
-    await supabase.from("turnos").insert([{ paciente_id: paciente?.id || null, fecha: Object.keys(porFecha)[dIdx], hora: horaSelec, estado:"pendiente", mensaje: mensaje||null }]);
-    if(slotSel) await supabase.from("disponibilidad").update({ ocupado:true }).eq("id", slotSel.id);
+    const slotSel = slotsDia?.find(sl => sl.hora.slice(0,5) === horaSelec.slice(0,5));
+    await supabase.from("turnos").insert([{ paciente_id: paciente?.id || null, fecha: fechaSel, hora: horaSelec, estado:"pendiente", mensaje: mensaje||null }]);
+    if(slotSel) {
+      await supabase.from("disponibilidad").update({ ocupado:true }).eq("id", slotSel.id);
+    }
     setLoad(false);
     setOk(true);
   };
