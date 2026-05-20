@@ -94,13 +94,14 @@ function Login({ onLogin }) {
     onLogin("paciente", acceso);
   };
 
+  const [solicitado, setSolicitado] = useState(false);
   const registrar = async () => {
     if(nombre.length < 2 || apellido.length < 2) return;
     const num = cel.replace(/\s/g, "");
     setLoad(true);
     const { data, error } = await supabase.from("pacientes").insert([{ nombre, apellido, celular: num, estado:"pendiente" }]).select().single();
     setLoad(false);
-    if(!error) setPendiente(true);
+    if(!error) { setSolicitado(true); setTimeout(()=>setPendiente(true), 1500); }
   };
 
   if(pendiente) return (
@@ -131,9 +132,10 @@ function Login({ onLogin }) {
           <label style={{...S.lbl}}>Número de WhatsApp</label>
           <div style={{ display:"flex", gap:8, marginBottom:20 }}>
             <div style={{...S.inp, width:80, flexShrink:0, textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", color:"#6B5C56", background:"#F5EDE6", fontSize:14 }}>+54 9</div>
-            <input style={{...S.inp}} placeholder="11 1234-5678" value={cel} onChange={e=>setCel(e.target.value)} type="tel"/>
+            <input style={{...S.inp}} placeholder="11 1234-5678" style={{...S.inp}} value={cel} onChange={e=>setCel(e.target.value)} type="tel"/>
           </div>
-          <button style={{...S.btnP}} onClick={verificar} disabled={load||cel.length<8}>
+          <p style={{ fontSize:11, color:"#A89890", fontFamily:"'Raleway',sans-serif", margin:"-12px 0 16px", letterSpacing:"0.06em" }}>Ingresá sin el 15 · Ej: <strong style={{color:"#2C2420"}}>11</strong> 1234-5678</p>
+          <button style={{...S.btnP}} onClick={verificar} disabled={load||cel.length<8}}>
             {load ? "Verificando..." : "Ingresar"}
           </button>
         </>}
@@ -141,14 +143,14 @@ function Login({ onLogin }) {
           <button onClick={()=>setPaso(1)} style={{ background:"none", border:"none", cursor:"pointer", color:"#A89890", display:"flex", alignItems:"center", gap:4, marginBottom:18, padding:0 }}>
             <IcoSVG name="back" size={15} color="#A89890"/><span style={{ fontFamily:"'Raleway',sans-serif", fontSize:12 }}>Cambiar número</span>
           </button>
-          <h2 style={{ fontSize:21, color:"#2C2420", fontWeight:600, margin:"0 0 6px" }}>Bienvenida!</h2>
+          <h2 style={{ fontSize:21, color:"#2C2420", fontWeight:600, margin:"0 0 6px" }}>Bienvenida/o!</h2>
           <p style={{ fontSize:13, color:"#A89890", margin:"0 0 24px", fontFamily:"'Raleway',sans-serif", lineHeight:1.6 }}>Completá tus datos. Mara va a aprobar tu acceso.</p>
           <label style={{...S.lbl}}>Nombre</label>
           <input style={{...S.inp, marginBottom:16}} placeholder="Nombre" value={nombre} onChange={e=>setNombre(e.target.value)}/>
           <label style={{...S.lbl}}>Apellido</label>
           <input style={{...S.inp, marginBottom:20}} placeholder="Apellido" value={apellido} onChange={e=>setApellido(e.target.value)}/>
           <button style={{...S.btnP}} onClick={registrar} disabled={load||nombre.length<2||apellido.length<2}>
-            {load ? "Guardando..." : "Solicitar acceso"}
+            {load ? "Guardando..." : solicitado ? "✓ Acceso solicitado" : "Solicitar acceso"}
           </button>
         </>}
       </div>
