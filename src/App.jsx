@@ -132,10 +132,10 @@ function Login({ onLogin }) {
           <label style={{...S.lbl}}>Número de WhatsApp</label>
           <div style={{ display:"flex", gap:8, marginBottom:20 }}>
             <div style={{...S.inp, width:80, flexShrink:0, textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", color:"#6B5C56", background:"#F5EDE6", fontSize:14 }}>+54 9</div>
-            <input style={{...S.inp}} placeholder="11 1234-5678" style={{...S.inp}} value={cel} onChange={e=>setCel(e.target.value)} type="tel"/>
+            <input style={{...S.inp}} placeholder="11 1234-5678" value={cel} onChange={e=>setCel(e.target.value)} type="tel"/>
           </div>
           <p style={{ fontSize:11, color:"#A89890", fontFamily:"'Raleway',sans-serif", margin:"-12px 0 16px", letterSpacing:"0.06em" }}>Ingresá sin el 15 · Ej: <strong style={{color:"#2C2420"}}>11</strong> 1234-5678</p>
-          <button style={{...S.btnP}} onClick={verificar} disabled={load||cel.length<8}}>
+          <button style={{...S.btnP}} onClick={verificar} disabled={load||cel.length<8}>
             {load ? "Verificando..." : "Ingresar"}
           </button>
         </>}
