@@ -258,8 +258,16 @@ function MisTurnos({ paciente }) {
   const [det, setDet] = useState(null);
 
   useEffect(() => {
-    if(!paciente?.id) return;
-    supabase.from("turnos").select("*").eq("paciente_id", paciente.id).order("fecha").order("hora").then(({ data }) => { if(data) setTurnos(data); });
+    const cargar = async () => {
+      if(!paciente?.id) return;
+      // Try by paciente_id first
+      const { data } = await supabase.from("turnos").select("*").eq("paciente_id", paciente.id).order("fecha").order("hora");
+      if(data && data.length > 0) { setTurnos(data); return; }
+    };
+    cargar();
+    // Realtime subscription
+    const canal = supabase.channel("turnos-paciente").on("postgres_changes", { event:"INSERT", schema:"public", table:"turnos" }, () => cargar()).subscribe();
+    return () => supabase.removeChannel(canal);
   }, [paciente]);
 
   if(det) return (
@@ -319,6 +327,9 @@ function AdminTurnos() {
 
   useEffect(() => {
     cargarTurnos();
+    // Realtime subscription - auto refresh when new turno is added
+    const canal = supabase.channel("turnos-admin").on("postgres_changes", { event:"*", schema:"public", table:"turnos" }, () => cargarTurnos()).subscribe();
+    return () => supabase.removeChannel(canal);
   }, []);
 
   const cargarTurnos = async () => {
