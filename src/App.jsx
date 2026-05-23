@@ -10,6 +10,12 @@ const formatFecha = (fecha) => {
   if(!fecha) return "";
   if(fecha.includes("-") && fecha.length === 10) {
     const d = new Date(fecha + "T12:00:00");
+    const hoy = new Date();
+    hoy.setHours(0,0,0,0);
+    const manana = new Date(hoy); manana.setDate(hoy.getDate()+1);
+    d.setHours(12,0,0,0);
+    if(d.getTime()===hoy.getTime()) return "Hoy · " + d.getDate() + " " + MESES[d.getMonth()];
+    if(d.getTime()===manana.getTime()) return "Mañana · " + d.getDate() + " " + MESES[d.getMonth()];
     return DIAS[d.getDay()] + " " + d.getDate() + " " + MESES[d.getMonth()];
   }
   return fecha;
@@ -17,10 +23,10 @@ const formatFecha = (fecha) => {
 const formatHora = (hora) => hora ? hora.slice(0,5) : "";
 
 const S = {
-  app:{ fontFamily:"'Playfair Display',Georgia,serif", backgroundColor:"#FAF5F1", minHeight:"100vh", maxWidth:430, margin:"0 auto" },
+  app:{ fontFamily:"'Raleway',sans-serif", backgroundColor:"#FAF5F1", minHeight:"100vh", maxWidth:430, margin:"0 auto" },
   header:{ padding:"52px 24px 22px", background:"linear-gradient(180deg,#C8DBC5 0%,#F5EDE6 100%)", borderBottom:"1px solid #DDD0C8", position:"relative", overflow:"hidden" },
   hAccent:{ position:"absolute", top:-20, right:-20, width:120, height:120, borderRadius:"50%", background:"#8FAF8A18" },
-  hTitle:{ fontSize:26, color:"#2C2420", fontWeight:700, margin:0 },
+  hTitle:{ fontSize:26, color:"#2C2420", fontWeight:700, margin:0, fontFamily:"'Playfair Display',Georgia,serif" },
   hSub:{ fontSize:12, color:"#A89890", margin:"4px 0 0", fontFamily:"'Raleway',sans-serif", letterSpacing:"0.14em", textTransform:"uppercase", fontWeight:500 },
   card:{ backgroundColor:"#FFFFFF", borderRadius:16, padding:20, marginBottom:12, boxShadow:"0 2px 16px rgba(44,36,32,0.06)", border:"1px solid #DDD0C8" },
   btnP:{ backgroundColor:"#8FAF8A", color:"#FFFFFF", border:"none", borderRadius:50, padding:"14px 32px", fontSize:13, fontFamily:"'Raleway',sans-serif", fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", cursor:"pointer", width:"100%" },
@@ -164,7 +170,8 @@ function TurnosDisponibles({ paciente }) {
   const [load, setLoad] = useState(false);
 
   useEffect(() => {
-    supabase.from("disponibilidad").select("*").eq("ocupado", false).order("fecha").order("hora").then(({ data }) => { if(data) setSlots(data); });
+    const hoy = new Date().toISOString().split("T")[0];
+    supabase.from("disponibilidad").select("*").eq("ocupado", false).gte("fecha", hoy).order("fecha").order("hora").then(({ data }) => { if(data) setSlots(data); });
   }, []);
 
   const porFecha = slots.reduce((acc, sl) => { (acc[sl.fecha]=acc[sl.fecha]||[]).push(sl); return acc; }, {});
@@ -187,7 +194,7 @@ function TurnosDisponibles({ paciente }) {
       <div style={{ width:88, height:88, borderRadius:"50%", background:"#EBF1EA", border:"2px solid #8FAF8A", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:24 }}>
         <IcoSVG name="check" size={40} color="#8FAF8A"/>
       </div>
-      <h2 style={{ fontSize:28, color:"#2C2420", fontWeight:600, margin:"0 0 8px" }}>Turno reservado!</h2>
+      <h2 style={{ fontSize:28, color:"#2C2420", fontWeight:600, margin:"0 0 8px", fontFamily:"'Playfair Display',serif" }}>Turno reservado!</h2>
       <p style={{ fontSize:15, color:"#6B5C56", fontFamily:"'Raleway',sans-serif", lineHeight:1.7, margin:"0 0 16px" }}>
         <strong style={{ color:"#2C2420" }}>{formatFecha(Object.keys(porFecha)[dIdx])} · {formatHora(horaSelec)} hs</strong>
       </p>
@@ -529,7 +536,8 @@ function AdminHorarios() {
   const [asignando, setAsignando] = useState(false);
 
   useEffect(() => {
-    supabase.from("disponibilidad").select("*").order("fecha").order("hora").then(({ data }) => { if(data) setSlots(data); });
+    const hoy = new Date().toISOString().split("T")[0];
+    supabase.from("disponibilidad").select("*").gte("fecha", hoy).order("fecha").order("hora").then(({ data }) => { if(data) setSlots(data); });
   }, []);
 
   const agregar = async () => {
@@ -632,7 +640,7 @@ function AdminHorarios() {
           <div style={{ background:"#fff", borderRadius:"20px 20px 0 0", padding:"28px 24px 44px", width:"100%", maxWidth:430, margin:"0 auto" }}>
             <h3 style={{ fontSize:20, color:"#2C2420", fontWeight:600, margin:"0 0 20px" }}>Agregar horario</h3>
             <label style={{...S.lbl}}>Fecha</label>
-            <input type="date" style={{...S.inp, marginBottom:16}} value={fecha} onChange={e=>setFecha(e.target.value)}/>
+            <input type="date" style={{...S.inp, marginBottom:16}} value={fecha} onChange={e=>setFecha(e.target.value)} min={new Date().toISOString().split("T")[0]}/>
             <label style={{...S.lbl}}>Hora</label>
             <input type="time" style={{...S.inp, marginBottom:24}} value={hora} onChange={e=>setHora(e.target.value)}/>
             <div style={{ display:"flex", gap:10 }}>
@@ -655,8 +663,17 @@ function AdminPacientes() {
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [nuevoApellido, setNuevoApellido] = useState("");
   const [load, setLoad] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
+  const [detPac, setDetPac] = useState(null);
+  const [turnosPac, setTurnosPac] = useState([]);
 
   useEffect(() => { cargar(); }, []);
+
+  const verPaciente = async (pac) => {
+    setDetPac(pac);
+    const { data } = await supabase.from("turnos").select("*").eq("paciente_id", pac.id).order("fecha", { ascending:false });
+    if(data) setTurnosPac(data);
+  };
 
   const cargar = async () => {
     const { data } = await supabase.from("pacientes").select("*").order("apellido");
@@ -683,8 +700,43 @@ function AdminPacientes() {
     await cargar();
   };
 
-  const aprobados = pacientes.filter(p => p.estado==="aprobado");
-  const pendientes = pacientes.filter(p => p.estado==="pendiente");
+  const aprobados = pacientes.filter(p => p.estado==="aprobado" && (p.nombre+" "+p.apellido+" "+p.celular).toLowerCase().includes(busqueda.toLowerCase()));
+  const pendientes = pacientes.filter(p => p.estado==="pendiente" && (p.nombre+" "+p.apellido+" "+p.celular).toLowerCase().includes(busqueda.toLowerCase()));
+
+  if(detPac) return (
+    <div style={{ paddingBottom:100 }}>
+      <div style={{...S.header, display:"flex", alignItems:"center", gap:14}}>
+        <div style={{...S.hAccent}}/>
+        <button onClick={()=>setDetPac(null)} style={{ background:"none", border:"none", cursor:"pointer", padding:0, zIndex:1 }}><IcoSVG name="back" size={20} color="#2C2420"/></button>
+        <div style={{ zIndex:1 }}><h1 style={{...S.hTitle}}>{detPac.nombre} {detPac.apellido}</h1><p style={{...S.hSub}}>{detPac.celular}</p></div>
+      </div>
+      <div style={{ padding:20 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10, marginBottom:16 }}>
+          <div style={{...S.card, textAlign:"center", marginBottom:0}}>
+            <p style={{ fontSize:32, color:"#8FAF8A", margin:0, fontFamily:"'Raleway',sans-serif", fontWeight:800 }}>{turnosPac.length}</p>
+            <p style={{ fontSize:10, color:"#A89890", margin:"4px 0 0", fontFamily:"'Raleway',sans-serif", textTransform:"uppercase", letterSpacing:"0.08em" }}>Visitas totales</p>
+          </div>
+          <div style={{...S.card, textAlign:"center", marginBottom:0}}>
+            <p style={{ fontSize:32, color:"#C8A46A", margin:0, fontFamily:"'Raleway',sans-serif", fontWeight:800 }}>{turnosPac.filter(t=>t.estado==="confirmado").length}</p>
+            <p style={{ fontSize:10, color:"#A89890", margin:"4px 0 0", fontFamily:"'Raleway',sans-serif", textTransform:"uppercase", letterSpacing:"0.08em" }}>Confirmadas</p>
+          </div>
+        </div>
+        <p style={{...S.lbl, marginBottom:12}}>Historial de turnos</p>
+        {turnosPac.length === 0
+          ? <p style={{ color:"#A89890", fontFamily:"'Raleway',sans-serif", textAlign:"center", marginTop:20 }}>Sin turnos registrados.</p>
+          : turnosPac.map(trn => (
+            <div key={trn.id} style={{...S.card, display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+              <div>
+                <p style={{ fontSize:14, color:"#2C2420", margin:"0 0 4px", fontWeight:600, fontFamily:"'Raleway',sans-serif" }}>{formatFecha(trn.fecha)}</p>
+                <p style={{ fontSize:12, color:"#A89890", margin:0, fontFamily:"'Raleway',sans-serif" }}>{formatHora(trn.hora)} hs</p>
+              </div>
+              <Badge estado={trn.estado}/>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ paddingBottom:100 }}>
@@ -694,15 +746,16 @@ function AdminPacientes() {
         <button onClick={()=>setModal(true)} style={{...S.btnP, width:"auto", padding:"10px 20px", fontSize:12, position:"relative", zIndex:1}}>+ Nueva</button>
       </div>
       <div style={{ padding:"16px 20px 0" }}>
-        <div style={{ display:"flex", gap:8, marginBottom:16 }}>
+        <div style={{ display:"flex", gap:8, marginBottom:12 }}>
           {[{val:"aprobados",lbl:"Activas"},{val:"pendientes",lbl:`Pendientes${pendientes.length>0?" ("+pendientes.length+")":""}`}].map(tb=>(
             <button key={tb.val} onClick={()=>setTab(tb.val)} style={{ padding:"7px 20px", borderRadius:50, border: tab===tb.val?"1.5px solid #8FAF8A":"1.5px solid #DDD0C8", background: tab===tb.val?"#8FAF8A":"#fff", color: tab===tb.val?"#fff":"#6B5C56", fontSize:12, fontFamily:"'Raleway',sans-serif", fontWeight:600, cursor:"pointer" }}>{tb.lbl}</button>
           ))}
         </div>
+        <input style={{...S.inp, marginBottom:16}} placeholder="Buscar por nombre o celular..." value={busqueda} onChange={e=>setBusqueda(e.target.value)}/>
         {tab==="aprobados" && (aprobados.length===0
           ? <p style={{ color:"#A89890", fontFamily:"'Raleway',sans-serif", textAlign:"center", marginTop:40 }}>No hay pacientes activas.</p>
           : aprobados.map(pac => (
-            <div key={pac.id} style={{...S.card, display:"flex", alignItems:"center", gap:14}}>
+            <div key={pac.id} style={{...S.card, display:"flex", alignItems:"center", gap:14, cursor:"pointer"}} onClick={()=>verPaciente(pac)}>
               <div style={{ width:44, height:44, borderRadius:"50%", background:"#E8D5C8", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                 <span style={{ fontSize:18, color:"#2C2420", fontWeight:600 }}>{pac.nombre?pac.nombre[0]:"?"}</span>
               </div>
@@ -710,7 +763,10 @@ function AdminPacientes() {
                 <p style={{ fontSize:15, color:"#2C2420", margin:"0 0 2px", fontWeight:600 }}>{pac.nombre} {pac.apellido}</p>
                 <p style={{ fontSize:12, color:"#A89890", margin:0, fontFamily:"'Raleway',sans-serif" }}>{pac.celular}</p>
               </div>
-              <button onClick={()=>rechazar(pac.id)} style={{ background:"none", border:"none", cursor:"pointer", padding:4 }}><IcoSVG name="trash" size={16} color="#B86060"/></button>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <IcoSVG name="chevron" size={14} color="#A89890"/>
+                <button onClick={e=>{e.stopPropagation();rechazar(pac.id);}} style={{ background:"none", border:"none", cursor:"pointer", padding:4 }}><IcoSVG name="trash" size={16} color="#B86060"/></button>
+              </div>
             </div>
           ))
         )}
