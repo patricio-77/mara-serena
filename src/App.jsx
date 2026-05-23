@@ -523,6 +523,10 @@ function AdminHorarios() {
   const [fecha, setFecha] = useState("");
   const [hora, setHora] = useState("");
   const [slots, setSlots] = useState([]);
+  const [slotSel, setSlotSel] = useState(null);
+  const [pacientes, setPacientes] = useState([]);
+  const [busqueda, setBusqueda] = useState("");
+  const [asignando, setAsignando] = useState(false);
 
   useEffect(() => {
     supabase.from("disponibilidad").select("*").order("fecha").order("hora").then(({ data }) => { if(data) setSlots(data); });
@@ -540,7 +544,57 @@ function AdminHorarios() {
     setSlots(slots.filter(sl => sl.id !== id));
   };
 
+  const abrirAsignar = async (sl) => {
+    setSlotSel(sl);
+    const { data } = await supabase.from("pacientes").select("*").eq("estado","aprobado").order("apellido");
+    if(data) setPacientes(data);
+    setBusqueda("");
+    setAsignando(true);
+  };
+
+  const asignarPaciente = async (pac) => {
+    await supabase.from("turnos").insert([{ paciente_id: pac.id, fecha: slotSel.fecha, hora: slotSel.hora, estado:"pendiente" }]);
+    await supabase.from("disponibilidad").update({ ocupado:true }).eq("id", slotSel.id);
+    setSlots(slots.map(sl => sl.id===slotSel.id ? {...sl, ocupado:true} : sl));
+    setAsignando(false);
+    setSlotSel(null);
+  };
+
   const porFecha = slots.reduce((acc, sl) => { (acc[sl.fecha]=acc[sl.fecha]||[]).push(sl); return acc; }, {});
+
+  if(asignando) {
+    const filtrados = pacientes.filter(p => (p.nombre+" "+p.apellido+" "+p.celular).toLowerCase().includes(busqueda.toLowerCase()));
+    return (
+      <div style={{ paddingBottom:100 }}>
+        <div style={{...S.header, display:"flex", alignItems:"center", gap:14}}>
+          <div style={{...S.hAccent}}/>
+          <button onClick={()=>setAsignando(false)} style={{ background:"none", border:"none", cursor:"pointer", padding:0, zIndex:1 }}><IcoSVG name="back" size={20} color="#2C2420"/></button>
+          <div style={{ zIndex:1 }}>
+            <h1 style={{...S.hTitle}}>Asignar paciente</h1>
+            <p style={{...S.hSub}}>{formatFecha(slotSel?.fecha)} · {formatHora(slotSel?.hora)} hs</p>
+          </div>
+        </div>
+        <div style={{ padding:20 }}>
+          <input style={{...S.inp, marginBottom:16}} placeholder="Buscar por nombre o celular..." value={busqueda} onChange={e=>setBusqueda(e.target.value)}/>
+          {filtrados.length === 0
+            ? <p style={{ color:"#A89890", fontFamily:"'Raleway',sans-serif", textAlign:"center", marginTop:40 }}>No hay pacientes activas.</p>
+            : filtrados.map(pac => (
+              <div key={pac.id} style={{...S.card, cursor:"pointer", display:"flex", alignItems:"center", gap:14}} onClick={()=>asignarPaciente(pac)}>
+                <div style={{ width:44, height:44, borderRadius:"50%", background:"#E8D5C8", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <span style={{ fontSize:18, color:"#2C2420", fontWeight:600 }}>{pac.nombre?pac.nombre[0]:"?"}</span>
+                </div>
+                <div style={{ flex:1 }}>
+                  <p style={{ fontSize:15, color:"#2C2420", margin:"0 0 2px", fontWeight:600 }}>{pac.nombre} {pac.apellido}</p>
+                  <p style={{ fontSize:12, color:"#A89890", margin:0, fontFamily:"'Raleway',sans-serif" }}>{pac.celular}</p>
+                </div>
+                <IcoSVG name="chevron" size={16} color="#A89890"/>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ paddingBottom:100 }}>
@@ -560,10 +614,12 @@ function AdminHorarios() {
               </div>
               <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
                 {sls.map(sl => (
-                  <div key={sl.id} style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 12px", borderRadius:50, background: sl.ocupado?"#EBF1EA":"#F5EDE6", border:"1px solid #DDD0C8" }}>
+                  <div key={sl.id} style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:50, background: sl.ocupado?"#EBF1EA":"#F5EDE6", border:"1px solid #DDD0C8", cursor: sl.ocupado?"default":"pointer" }}
+                    onClick={()=>!sl.ocupado && abrirAsignar(sl)}>
                     <span style={{ fontSize:12, fontFamily:"'Raleway',sans-serif", color: sl.ocupado?"#6D8F68":"#2C2420", fontWeight:600 }}>{formatHora(sl.hora)}</span>
-                    {!sl.ocupado && <button onClick={()=>eliminar(sl.id)} style={{ background:"none", border:"none", cursor:"pointer", color:"#A89890", padding:0, fontSize:14, lineHeight:1 }}>×</button>}
+                    {!sl.ocupado && <IcoSVG name="plus" size={12} color="#8FAF8A"/>}
                     {sl.ocupado && <span style={{ fontSize:9, color:"#6D8F68", fontFamily:"'Raleway',sans-serif" }}>✓</span>}
+                    {!sl.ocupado && <button onClick={e=>{e.stopPropagation();eliminar(sl.id);}} style={{ background:"none", border:"none", cursor:"pointer", color:"#A89890", padding:0, fontSize:14, lineHeight:1 }}>×</button>}
                   </div>
                 ))}
               </div>
