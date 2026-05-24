@@ -85,6 +85,17 @@ function Login({ onLogin }) {
   const [solicitado, setSolicitado] = useState(false);
   const [recordar, setRecordar] = useState(!!localStorage.getItem("ms_cel"));
 
+  useEffect(() => {
+    const celGuardado = localStorage.getItem("ms_cel");
+    if(celGuardado && celGuardado.length >= 8) {
+      const num = celGuardado.replace(/\s/g,"").replace(/-/g,"");
+      if(ADMINS.includes(num)) { onLogin("admin", null); return; }
+      supabase.from("pacientes").select("*").eq("celular", num).single().then(({ data }) => {
+        if(data && data.estado === "aprobado") onLogin("paciente", data);
+      });
+    }
+  }, []);
+
   const verificar = async () => {
     const num = cel.replace(/\s/g,"").replace(/-/g,"");
     if(num.length < 8) return;
