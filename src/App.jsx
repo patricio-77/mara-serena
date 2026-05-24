@@ -77,17 +77,19 @@ const Badge = ({ estado }) => {
 // ─── LOGIN ──────────────────────────────────────────────────────────────────────
 function Login({ onLogin }) {
   const [paso, setPaso] = useState(1);
-  const [cel, setCel] = useState("");
+  const [cel, setCel] = useState(() => localStorage.getItem("ms_cel") || "");
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [load, setLoad] = useState(false);
   const [pendiente, setPendiente] = useState(false);
   const [solicitado, setSolicitado] = useState(false);
+  const [recordar, setRecordar] = useState(!!localStorage.getItem("ms_cel"));
 
   const verificar = async () => {
     const num = cel.replace(/\s/g,"").replace(/-/g,"");
     if(num.length < 8) return;
     setLoad(true);
+    if(recordar) { localStorage.setItem("ms_cel", cel); } else { localStorage.removeItem("ms_cel"); }
     if(ADMINS.includes(num)) { setLoad(false); onLogin("admin", null); return; }
     const { data } = await supabase.from("pacientes").select("*").eq("celular", num).single();
     setLoad(false);
@@ -136,7 +138,11 @@ function Login({ onLogin }) {
             <div style={{...S.inp, width:80, flexShrink:0, textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", color:"#6B5C56", background:"#F5EDE6", fontSize:14 }}>+54 9</div>
             <input style={{...S.inp}} placeholder="11 1234-5678" value={cel} onChange={e=>setCel(e.target.value)} type="tel"/>
           </div>
-          <p style={{ fontSize:11, color:"#A89890", fontFamily:"'Raleway',sans-serif", margin:"0 0 20px", letterSpacing:"0.06em" }}>Sin el 15 · Ej: <strong style={{color:"#2C2420"}}>11</strong> 1234-5678</p>
+          <p style={{ fontSize:11, color:"#A89890", fontFamily:"'Raleway',sans-serif", margin:"0 0 16px", letterSpacing:"0.06em" }}>Sin el 15 · Ej: <strong style={{color:"#2C2420"}}>11</strong> 1234-5678</p>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:20 }}>
+            <input type="checkbox" id="recordar" checked={recordar} onChange={e=>setRecordar(e.target.checked)} style={{ width:16, height:16, accentColor:"#8FAF8A", cursor:"pointer" }}/>
+            <label htmlFor="recordar" style={{ fontSize:13, color:"#6B5C56", fontFamily:"'Raleway',sans-serif", cursor:"pointer" }}>Recordar mi número en este dispositivo</label>
+          </div>
           <button style={{...S.btnP}} onClick={verificar} disabled={load||cel.length<8}>
             {load ? "Verificando..." : "Ingresar"}
           </button>
@@ -226,7 +232,7 @@ function TurnosDisponibles({ paciente }) {
           ? <p style={{ color:"#A89890", fontFamily:"'Raleway',sans-serif", textAlign:"center", marginTop:40 }}>No hay turnos disponibles por el momento.</p>
           : Object.entries(porFecha).map(([fecha, sls], idx) => (
             <div key={fecha} style={{ marginBottom:16 }}>
-              <p style={{...S.lbl, marginBottom:8}}>{formatFecha(fecha)}</p>
+              <p style={{ fontSize:13, color:"#2C2420", fontFamily:"'Raleway',sans-serif", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", marginBottom:10 }}>{formatFecha(fecha)}</p>
               <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                 {sls.map(sl => {
                   const sel = dIdx===idx && horaSelec===sl.hora;
