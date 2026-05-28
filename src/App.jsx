@@ -1,5 +1,35 @@
 import { useState, useEffect } from "react";
-import { supabase } from "./supabase.js";
+
+const API = "https://maraserena.com/api";
+
+const api = {
+  get: async (endpoint, params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const url = query ? `${API}/${endpoint}?${query}` : `${API}/${endpoint}`;
+    const res = await fetch(url);
+    return res.json();
+  },
+  post: async (endpoint, body) => {
+    const res = await fetch(`${API}/${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  },
+  put: async (endpoint, id, body) => {
+    const res = await fetch(`${API}/${endpoint}?id=${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  },
+  delete: async (endpoint, id) => {
+    const res = await fetch(`${API}/${endpoint}?id=${id}`, { method: "DELETE" });
+    return res.json();
+  }
+};
 
 const LOGO = "data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNjQwIDY0MCIgd2lkdGg9IjY1IiBoZWlnaHQ9IjY1IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPiA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLjAwMDAwMCw2NDAuMDAwMDAwKSBzY2FsZSgwLjEwMDAwMCwtMC4xMDAwMDApIiBmaWxsPSJ3aGl0ZSIgc3Ryb2tlPSJub25lIj4gPHBhdGggZD0iTTI5NjcgNTk1MCBjLTI3IC0xMCAtNzUgLTQ0IC0xMTMgLTc5IC0zNSAtMzQgLTcyIC02MSAtODIgLTYyIC05IC0xIC00NSAtMiAtNzkgLTMgLTY1IC0yIC05MyAtMTYgLTE5NiAtOTggLTI3IC0yMSAtNTUgLTM4IC02MiAtMzggLTcgMCAtMzUgMjAgLTYzIDQ1IC04MCA3MiAtMTI1IDc4IC0xNjggMjIgLTE0IC0xNyAtMzQgLTI2IC02OCAtMzAgLTI3IC00IC02OCAtMTggLTkxIC0zMSAtNTAgLTMwIC0xMzMgLTExNyAtMTQ2IC0xNTQgLTYgLTE4IC0yOCAtMzcgLTY3IC01OCAtNjMgLTM0IC05OSAtNzcgLTEwNyAtMTMzIC00IC0yMCAtOCAtNDcgLTExIC02MSAtOCAtMzggLTEwMyAtMTIyIC0xODcgLTE2NCAtNzEgLTM2IC04MCAtMzggLTEzNSAtMzIgLTQ3IDUgLTcxIDIgLTExNCAtMTQgLTcxIC0yNiAtMTY2IC0xMDQgLTE5NSAtMTU5IC0zMyAtNjMgLTQyIC03MSAtNzcgLTcxIC00NCAwIC03NyAtMjAgLTk5IC01OCAtMzQgLTU4IC0zOSAtMTAwIC0yMCAtMTc1IGwxNyAtNjcgLTMwIC0zMyBjLTY5IC03NCAtMTUyIC0yMDMgLTE3NCAtMjY5IC0xMCAtMzIgLTkgLTQzIDQgLTY5IDkgLTE4IDE2IC0zNyAxNiAtNDMgMCAtNiAtMjIgLTM4IC00OCAtNzEgLTkxIC0xMTIgLTk5IC0xNDUgLTUyIC0yMTUgMTYgLTI1IDMwIC01NSAzMCAtNjcgMCAtMTIgLTE4IC01NiAtNDEgLTk5IC01NCAtMTAxIC01MCAtMTE4IDQwIC0yMDQgNzAgLTY1IDcyIC02OSA5NiAtMTc0IDEwIC00NSA1OSAtODQgMTM2IC0xMDcgbDY5IC0yMSAzMDIgNTEgYzQ0MCA3MyA1NjMgODMgNzYzIDYxIDIxNCAtMjQgNDU0IC0xMTkgNjgxIC0yNjcgMjEyIC0xNDAgNDgzIC00MTMgNTYwIC01NjUgNDIgLTgzIDgxIC00MDEgNjkgLTU2MyAtOSAtMTIxIC0yNCAtMzEyIC00MCAtNDkwIC04IC04OCAtMjAgLTIyMCAtMjUgLTI5MyAtMjEgLTI2MSAtNTEgLTM4OCAtMTU2IC02NDQgLTI1IC02MCAtNDQgLTExOSAtNDIgLTEzMCA0IC0yOCA0OSAtNjEgNzEgLTUyIDYzIDI0IDExNCAyNjQgMTY3IDc4NCA2IDU4IDIwIDE2NyAzMSAyNDQgMzggMjY2IDY5IDU2MyA3OSA3NjYgMTUgMjk5IDIzIDM1MiA2NSA0MzUgMTIyIDI0MSA0MTQgNDkzIDgyMCA3MDYgMjg2IDE1MCA0OTQgMTk3IDk3MCAyMTkgMzAyIDE0IDM2MyAyNiA0OTMgOTEgNTYgMjkgMTA4IDU5IDExNCA2NiA2IDggMTcgNTYgMjMgMTA3IDkgNzEgMjEgMTE0IDUwIDE3NSA0NyAxMDAgNDggMTI3IDUgMTgxIC0yOSAzNyAtMzIgNDYgLTI2IDg2IDQgMzIgMCA1OCAtMTUgOTcgLTIwIDQ5IC0yMCA1OCAtOSAxNDggMTUgMTE0IDEwIDE0MiAtMzQgMTg0IC0xOCAxNyAtNDUgNDkgLTU4IDcxIC0zNyA1OCAtNTcgNzIgLTEyOCA5MCAtMzYgOSAtNzYgMjMgLTg4IDMxIC0zNSAyMiAtNTIgNzMgLTUyIDE1OCAwIDE0MSAtNDcgMjA0IC0xNzcgMjM1IC00NCAxMCAtNTkgMjAgLTk3IDY0IC0zMSAzNyAtNTcgNTYgLTg1IDY0IC0yOSA5IC01NSAyOSAtOTIgNzMgLTU5IDY3IC04MyA3OCAtMTI5IDU0IGwtMzEgLTE2IC00MCA0NSBjLTU4IDY1IC0xMjcgOTAgLTIzOSA4MyAtNTMgLTIgLTk4IC0xMSAtMTE5IC0yMSAtMTggLTEwIC0zNCAtMTYgLTM1IC0xNCAtMSAyIC0xMiAxOSAtMjQgMzkgLTI5IDQ3IC02NiA2MiAtMTM0IDU1IC01NyAtNyAtNjkgLTMgLTg2IDMxIC0xMyAyNCAtMTAyIDg4IC0xMDIgNzMgMCAtNSAxNiAtMjAgMzYgLTM0IDIwIC0xMyA0NyAtNDAgNjAgLTYwIDI0IC0zNSAyNyAtMzYgODUgLTM2IDU2IDAgNjQgLTMgOTUgLTM0IDE5IC0xOSAzNCAtNDEgMzQgLTQ5IDAgLTI2IDM1IC0yOSA3NSAtNiAyNCAxNCA1OSAyMyAxMDMgMjYgODggNiAxNjcgLTIyIDIzNSAtODUgNDcgLTQ0IDQ5IC00NSA4NiAtMzYgNTAgMTMgNjQgNyAxMDAgLTQzIDIwIC0yOCA1MSAtNTMgOTAgLTcyIDM2IC0xOSA3NCAtNDggOTYgLTc2IDMyIC0zOCA0OCAtNDggMTA2IC02NSAxMTcgLTM1IDE0NyAtNzggMTY0IC0yMzUgNCAtMzMgMTMgLTc1IDIxIC05NCA4IC0xOCAxMSAtMzggNyAtNDQgLTMgLTYgLTEgLTcgNSAtMyA2IDQgMjIgMCAzNCAtNyAxMyAtOCA0MSAtMTggNjMgLTIyIDYyIC0xMSA5NSAtMzMgMTE1IC03NyAxMCAtMjIgMzkgLTYwIDY1IC04MyBsNDcgLTQ0IC03IC04MiBjLTMgLTQ2IC05IC04NyAtMTEgLTkxIC04IC0xMiAxNyAtMTI4IDI3IC0xMjggNSAwIDkgLTI4IDkgLTYzIDAgLTYyIDE1IC0xMDEgNDcgLTEyMCA3IC00IDEzIC0xNyAxMyAtMjkgMCAtMjIgLTU4IC0xMzggLTcwIC0xMzggLTQgMCAtNyAtNiAtOCAtMTIgLTEgLTcgLTcgLTQ4IC0xMyAtOTAgLTExIC02NSAtMTYgLTc4IC0zMyAtODEgLTE5IC00IC0xOSAtNCAyIC02IDI1IC0xIDMwIC0yOCAxMCAtNTMgLTcgLTggLTU2IC0zNCAtMTA5IC01NyAtMTIwIC01MSAtMjEyIC02NiAtNTE5IC04MSAtMzM4IC0xNiAtNDYzIC0zNCAtNjMzIC05MiAtMTk5IC02NiAtNDEyIC0xNzUgLTY0MiAtMzI2IC0xMDMgLTY4IC0xNjEgLTExNyAtMjc4IC0yMzIgLTgxIC04MCAtMTQ3IC0xNDIgLTE0NyAtMTM3IDAgNCAxMSAyNSAyNSA0OCAxNCAyMiAyMyA0NCAyMCA0OCAtNiAxMCA3NCAxMzUgMTI5IDIwMSA3NyA5MyAyNzUgMjg2IDM4NyAzNzYgMjU5IDIwOCA2ODkgNTA2IDkyOSA2NDMgNjkgNDAgMjExIDExNSAzMTcgMTY5IDEwNiA1MyAxOTAgOTggMTg4IDEwMCAtMSAyIC0xMTEgLTUwIC0yNDIgLTExNiAtMzg5IC0xOTQgLTgzMyAtNDU1IC0xMDM4IC02MTAgLTU2IC00MyAtMTk1IC0xNzEgLTMxNSAtMjkxIC0xMTggLTExOCAtMjEwIC0yMDggLTIwNCAtMjAwIDEzOSAxODAgMjAxIDI1NiAyOTAgMzQ4IDEyNiAxMzEgMTg4IDE4NCA0NjkgMzk4IDExNiA4NyAyNzQgMjA5IDM1MiAyNzAgMTIzIDk3IDI0MiAxODAgMzczIDI2MSA1OSAzNyAyNiAyNCAtNDkgLTE4IC0yNzcgLTE1NyAtNzU2IC01MTUgLTEwNDAgLTc3OSAtMjQ3IC0yMjggLTQ4NyAtNTQ2IC02MjIgLTgyNSBsLTU5IC0xMjEgNCA3NSBjMyA0NCAxNSAxMDUgMzAgMTQ5IDMxIDkwIDk2IDIyMiAxMDcgMjE2IDkgLTYgMzAgNTEgMjIgNTkgLTQgMyAtMSA2IDYgNiA3IDAgOSA1IDYgMTAgLTQgNiAzNiA5MiA4OCAxOTMgMTk4IDM4MiAyNzEgNDgwIDY4NyA5MjcgMTU0IDE2NiAxODcgMjAyIDMxOSAzNTUgMTM2IDE1NyAzMDEgMzI2IDM5NiA0MDggODYgNzMgOTkgODYgNjAgNjAgLTU2IC0zOSAtMjA5IC0xNzcgLTMyNSAtMjk0IC0xODEgLTE4MiAtNTY2IC02MDggLTcxNCAtNzg5IC0zMiAtNDAgLTI2IC0yNCAxNCAzNSAxNSAyMiA4NyAxMzkgMTYwIDI2MCAxNTkgMjY1IDI2NSA0MjUgMzczIDU2MyA4NCAxMDggMTE1IDE3MCA0NiA5MyAtNjMgLTcwIC0yMTkgLTI3NSAtMjg1IC0zNzQgLTM0IC01MSAtMTIwIC0xODkgLTE5MSAtMzA3IC03MiAtMTE5IC0xODkgLTMwNCAtMjYxIC00MTIgLTE2NSAtMjQ1IC0zNjQgLTYxMiAtNDM4IC04MDMgLTEzIC0zNCAtMjAgLTQzIC0yMiAtMzAgLTggNTkgMjEwIDYxNCAzNzIgOTQ4IDEwMCAyMDYgMzM2IDYyOSA0NzkgODU4IDkxIDE0NyAyMzIgMzQ1IDMxMSA0MzggODQgOTkgMTA5IDEzMSAxMDMgMTMxIC0xMiAwIC0xNzAgLTE5MCAtMjcyIC0zMjUgLTI3NyAtMzY5IC01MzMgLTgyMiAtNzUwIC0xMzMwIC00MyAtOTkgLTk5IC0yMjkgLTEyNSAtMjkwIC01OSAtMTM4IC05NCAtMjQxIC0xNDEgLTQyNSAtMjggLTEwNiAtMzggLTEzNCAtMzggLTEwNSAtMiA4MiAyMCAyNzMgNDAgMzUwIDExIDQ0IDI5IDEyMiA0MCAxNzQgMTAgNTEgNTUgMjUyIDk4IDQ0NSA0MyAxOTMgOTcgNDQzIDEyMCA1NTYgNjUgMzE2IDE0NSA2MzUgMTkwIDc1MyA2IDE2IDExIDM0IDEwIDQwIC0xIDIwIC0yOCAtNjAgLTc0IC0yMTggLTU4IC0yMDIgLTgwIC0yOTQgLTE0NSAtNjEwIC00NCAtMjE2IC00NyAtMjI3IC0xNDAgLTYxNSAtNjUgLTI3MCAtMTIwIC01MjcgLTEzNSAtNjMzIC0xNyAtMTEzIC0xMiAtMjMgMTAgMjE4IDQzIDQ1NyA2NSA2MzUgMTE2IDk1MCA2NiA0MDAgMTA2IDU3NyAyMDAgODg2IDMyIDEwOCA4MiAyODMgMTA5IDM4OSAyNyAxMDYgNTIgMTk1IDU0IDE5OCAzIDIgMjEgLTEgNDEgLTggMjAgLTcgNDYgLTkgNTkgLTYgMTUgNCAzNCAtMyA1NiAtMTkgNDkgLTM3IDYxIC0zMCAxNSA4IC0yOSAyNCAtNTMgMzQgLTkzIDM4IC00NSA2IC02MCAxMyAtOTYgNDggLTQwIDQwIC00NCA0MSAtMTA4IDQxIGwtNjcgMCAtMzggNDYgLTM3IDQ3IC02NyAtNiBjLTYzIC01IC0xMjAgLTI1IC0xMzMgLTQ2IC0xMyAtMjEgLTM2IC0xNjAgLTYwIC0zNjEgLTc4IC02NDUgLTk3IC03NjUgLTEyMSAtNzY1IC01IDAgLTE2IDM0IC0yMiA3NSAtMTIgNzAgLTI0IDE2NSAtMTA0IDgxOSAtMTcgMTM5IC0zNSAyNjQgLTM5IDI3NyAtOCAyMSAtMTYgMjQgLTU3IDI0IC0yNyAtMSAtNzAgLTkgLTk2IC0yMHogbTEyMSAtMjIgYzkgLTEyIDE5IC05NiA3OCAtNjU4IDQ2IC00NDEgODIgLTY1MCAxMTQgLTY1MCAzNiAwIDk3IDMxNiAxODEgOTMwIDIzIDE3MyA0NyAzMjEgNTMgMzI4IDEyIDE3IDcyIDQyIDEwMSA0MiAxMyAwIDM5IC0xOCA2NiAtNDcgbDQ0IC00OCA4MiAzIGM3OSAzIDgzIDIgOTkgLTI0IDE1IC0yMSAxNiAtMzIgNyAtNjIgLTI1IC04NyAtMTA1IC0zNjEgLTE1NiAtNTMyIC0xMTQgLTM4MyAtMTQ2IC01MzEgLTIzMiAtMTA3NSAtMjIgLTEzOSAtNjIgLTQ4MCAtODEgLTY4NyAtMTAgLTEwNCAtMjEgLTE4OCAtMjUgLTE4OCAtMTYgMCAtMjEgMzY1IC0xMCA2NDUgMTcgMzk4IDM5IDc5MCA1MSA5MTAgMjggMjYzIDExMyA2MDIgMjI1IDkwMCAyOCA3NiAzMSA5MyA5IDUyIC0yNSAtNDYgLTgxIC0yMDcgLTExOCAtMzM5IC0xMDkgLTM5MCAtMTM3IC01NjMgLTE1NiAtOTU4IC01IC0xMTggLTE1IC0zMTIgLTIxIC00MzAgLTcgLTEzMyAtOSAtMzQ3IC01IC01NjAgMyAtMTkwIDIgLTM1OCAtMiAtMzc1IC02IC0xOSAtMTEgNzIgLTE1IDI1NSAtNCAxNTcgLTEwIDQwOSAtMTQgNTYxIC02IDI4NyAwIDM5OCAzOCA2NzQgMjggMjA0IDIyIDIwNCAtMTggMCAtMzMgLTE2OSAtMzYgLTE5NSAtNDAgLTQzMCAtMyAtMTM3IDAgLTQzMCA3IC02NTAgNiAtMjIwIDE0IC00OTggMTcgLTYxOCA2IC0yNDQgMjIgLTI3NSAyNCAtNDcgMSA4MCA1IDE3MiA5IDIwNSA0IDMzIDUgLTM0IDIgLTE1MCAtMiAtMTE1IC04IC0yMjAgLTEzIC0yMzMgLTUgLTEzIC05IC0xMjggLTEwIC0yNTUgLTEgLTI3MiAtMTEgLTQzNSAtMjEgLTM3MiAtOSA1MyAtMTYgMTM0IC0yOCAzMzcgLTEwIDE2NyAtNTQgNDY4IC03MCA0NzggLTUgMyAtMzMgODAgLTYzIDE3MCAtMTIyIDM3MSAtMjU5IDY3NCAtNDgzIDEwNjYgLTIyOSA0MDIgLTM0MiA2MzMgLTQ3OSA5NzkgLTY1IDE2NSAtMTQwIDM1MSAtMTY2IDQxMyBsLTQ3IDExMiAzMSAyNCBjNDUgMzMgODYgNTIgMTMwIDYwIDIxIDQgMzUgMTEgMzIgMTYgLTggMTMgMzYgNDAgNjcgNDAgMTcgMCAzNSAtOSA0NiAtMjIgOSAtMTMgMzQgLTM5IDU0IC01OCAyMSAtMjAgNDcgLTU2IDU4IC04MSAxOCAtMzcgMjEgLTM5IDE2IC0xNCAtMiAxNyAtOCAzOCAtMTEgNDcgLTUgMTEgMSAyMCAxNyAyOCAxMyA3IDQ0IDI5IDY5IDUwIDI1IDIxIDYxIDQ3IDgwIDU5IDM4IDIzIDk5IDI4IDEwMCA5IDAgLTEwIDIgLTEwIDYgMCAyIDYgMTUgMTIgMjggMTIgNDAgMCA2NyAxNSAxMzQgNzUgOTIgODIgMTgxIDExNyAyMDkgODN6IG0tOTc5IC01NzUgYzIyMSAtNTU5IDI1NyAtNjQ3IDM0MCAtODEzIDQ4IC05NiAxNTMgLTI5MCAyMzMgLTQzMCAxNjYgLTI5MSAyMzEgLTQxNyAzMTYgLTYxNSAxNzIgLTQwMyAyNjggLTcwNSAyODggLTkxMCA0IC0zOCA0IC02OCAxIC02NSAtOCA4IC05NCAyMjMgLTE0NCAzNjAgLTQ0IDEyNCAtMTQwIDMzNCAtMzE5IDY5NSAtMTI1IDI1MyAtMjM3IDQ1OSAtMzQ3IDYzNSAtMjUxIDQwNCAtMjUwIDQwMiAtNDg3IDg4MCAtNjIgMTI0IC0xMTYgMjMwIC0xMjIgMjM1IC01IDYgMiAtMTIgMTUgLTQwIDEzIC0yNyA1MiAtMTA4IDg2IC0xODAgMTc1IC0zNjMgMjM3IC00ODMgMzI2IC02MzAgMTc0IC0yODYgNDUwIC03NzMgNDQzIC03ODAgLTIgLTMgLTI3IDI3IC01NiA2NSAtMjkgMzggLTExOSAxNTAgLTIwMCAyNDcgLTI2OSAzMjIgLTM5MSA1MDIgLTU2MiA4MjggLTg4IDE2OCAtMTY2IDMwMSAtMTgyIDMxMSAtNiA0IC05IDMgLTYgLTIgMTA2IC0xODIgMTU5IC0yNzYgMjE0IC0zODUgMTYwIC0zMTYgMjQ5IC00NDEgNzgyIC0xMDk4IDkzIC0xMTUgMTExIC0xNTkgMjUgLTYzIC0zMSAzNSAtMTM2IDEzNSAtMjMzIDIyMiAtMjYxIDIzNCAtNDEwIDQwMyAtNTA4IDU3OSAtMjE4IDM4OCAtMjgxIDQ4NyAtMzg2IDYwMiAtNTUgNjIgLTUwIDUxIDIxIC00MSA3NiAtOTggMTUyIC0yMTkgMjQzIC0zODUgNDUgLTgzIDkzIC0xNzAgMTA2IC0xOTUgbDI1IC00NSAtMzcgNDAgYy0yMCAyMiAtMzMgMzMgLTI5IDI1IDUgLTggLTI5IDIwIC03NiA2MyAtMTU5IDE0OCAtMjMwIDE5NSAtNTUxIDM2MSAtMTA0IDU0IC0xODggMTAxIC0xODggMTA2IDAgMTQgODggODAgMTMzIDEwMCAzMSAxNCA2MyAxOSAxMTcgMTcgOTAgLTIgMTMxIDE1IDIzNiA5MyA3NiA1OCAxMTIgMTA1IDEzOCAxODYgMTkgNTkgNTMgOTQgMTE4IDEyMiA0NSAyMCA1NSAzMCAxMDAgMTExIDkgMTcgMjEgMzEgMjUgMzEgNSAwIDUxIC0xMDcgMTAyIC0yMzd6IG0tNzkxIC01MzkgYzIzNiAtMTI5IDI4MyAtMTU3IDM3NyAtMjI4IDEzNSAtMTAyIDM4NCAtMzUzIDU3MCAtNTc1IGwzMCAtMzYgLTMxIDIyIGMtMTggMTMgLTExMiA5OCAtMjExIDE5MSAtMTkzIDE4MSAtMzE0IDI3NyAtNDYxIDM2NiAtMTExIDY4IC0yODkgMTU3IC00MjQgMjExIC01NCAyMiAtOTggNDMgLTk4IDQ2IDAgMTQgNTIgOTkgNjEgOTkgNiAwIDkwIC00MyAxODcgLTk2eiBtLTE0MiAtNjMgYzE4NSAtNzggNDM0IC0yMzAgNjE5IC0zNzggNTUgLTQ0IDE3MiAtMTQ0IDI2MCAtMjIzIDg4IC03OCAyMDAgLTE3MCAyNDggLTIwMiAxNjkgLTExMyA0ODYgLTQxMiA1NzYgLTU0MiAyOSAtNDIgNTEgLTc5IDQ5IC04MSAtMiAtMyAtNDkgNDggLTEwNCAxMTIgLTEyOCAxNTEgLTIzNCAyNDIgLTQ3NCA0MTAgLTEwNyA3NSAtMjYyIDE4OSAtMzQ1IDI1MiAtODIgNjQgLTIwNCAxNTIgLTI3MSAxOTcgLTIxNiAxNDQgLTY0NCAzNzQgLTc3MSA0MTQgLTM4IDEyIC00MSAxNSAtMzEgMzQgMjYgNTAgNDAgNTkgOTQgNTMgMjkgLTMgOTYgLTI0IDE1MCAtNDZ6IG0tMTUxIC04NCBjNDQgLTE5IDEyNSAtNjAgMTgwIC05MiA1NSAtMzIgMTcwIC05OSAyNTUgLTE0OCAxOTQgLTExMSAzMjMgLTE5NiA0NzAgLTMwOSAyMTAgLTE2MiAzNzQgLTI4MyA0NzMgLTM1MiAxMzIgLTkxIDIwNiAtMTUzIDMwNSAtMjU1IDIwNSAtMjEwIDMxOSAtNDA1IDQ1NCAtNzc2IDMzIC05MSAzMiAtOTAgLTQ1IDIzIC05NyAxNDIgLTIwNyAyNzIgLTM2NyA0MzIgLTE3MiAxNzIgLTMxNiAyODYgLTQ3OCAzNzggLTI5NyAxNjkgLTgwOCAzNTMgLTEwNDIgMzc3IC0xNTQgMTUgLTMzMyA1MCAtNDYyIDkyIC00MiAxMyAtNDcgMTcgLTM4IDMzIDYgMTAgMTAgMjggMTAgMzkgMCAxMSA3IDI0IDE3IDI5IDE0IDkgMTQgMTAgLTUgMTYgLTM1IDEyIC0yOSA2OSAxNSAxNDQgMzEgNTIgNDAgNjEgNTcgNTYgMTggLTYgMTkgLTUgNyAxMCAtMTEgMTQgLTExIDE2IDIgMTYgMTAgMCAxNCA2IDExIDEzIC02IDE3IDcyIDEwNyA5MyAxMDcgMjEgMCA3OCAtMzUgMzM4IC0yMDYgMTI3IC04MyAyODAgLTE4MCAzNDAgLTIxNiAxMTkgLTcwIDQ3NyAtMjU4IDQ5MSAtMjU4IDEwIDAgLTQ0IDMxIC0yNTAgMTQyIC0yMDEgMTA4IC0zNTggMjAzIC02MjYgMzc4IC0xMjQgODEgLTI0MSAxNTUgLTI2MCAxNjYgLTM5IDIzIC01OCA2OCAtNTkgMTQ3IC0xIDU4IDQgNTkgMTE0IDE0eiBtLTIxMSAtNjU2IGMxMzAgLTM3IDIyNSAtNTcgMzYxIC03NiAxNjUgLTIzIDI1NyAtNDMgMzkwIC04NyA0MDggLTEzNiA3MjQgLTI5NSA5NTUgLTQ4MSAxMTcgLTk0IDM1OCAtMzM2IDQ2NiAtNDY3IDkzIC0xMTMgMjE2IC0yOTAgMjAxIC0yOTAgLTMgMCAtNDAgNDQgLTgyIDk4IC05OSAxMjQgLTM0OSAzNzEgLTQ5MCA0ODUgLTIyOSAxODQgLTQ1MCAzMDkgLTY4MyAzODYgLTY4IDIyIC0yNTAgNzAgLTQwNSAxMDYgLTE1NSAzNyAtMzA2IDczIC0zMzUgODIgLTMwIDggLTU1IDEzIC01OCAxMCAtNiAtNSAyMjAgLTczIDQ0MSAtMTMyIDI1OSAtNzAgNDAwIC0xMTQgNTE0IC0xNjIgMjcyIC0xMTMgNTAxIC0yNzIgNzYxIC01MjggMTM0IC0xMzIgMTk5IC0yMDIgMTEwIC0xMTkgLTM0OCAzMjMgLTc0NCA1NDYgLTExMzAgNjM2IC02OSAxNiAtMjE1IDUyIC0zMjUgODAgLTExMCAyOCAtMjQ5IDYyIC0zMDkgNzUgLTExNiAyNSAtMzc3IDY1IC0zODMgNTkgLTMgLTIgMjkgLTkgNjkgLTE2IDE5NiAtMzAgMzAxIC01NSA0NjkgLTEwOSAxMDEgLTMzIDIzOCAtNzEgMzA0IC04NiAyNDYgLTU1IDI4NyAtNjcgNDk2IC0xNTEgMTg1IC03NCAzMzkgLTE0NiAzMzkgLTE1OSAwIC0yIC0zNyAxMyAtODIgMzQgLTk1IDQ0IC0xNzcgNzMgLTI2MyA5NSAtMTE1IDI5IC03NjQgMTU1IC05MjUgMTgwIC04NSAxMyAtNDc2IDQ2IC01NDkgNDYgLTY2IDAgLTc4IDY0IC0yNSAxNDMgMzUgNTMgMzUgMTA2IDAgMTc2IC0zNCA2NyAtMzAgMTAxIDIwIDE1OSAyMCAyMyAzOCA0MiA0MSA0MiAzIDAgNTEgLTEzIDEwNyAtMjl6IG0xODEgLTUzMiBjOTkgLTExIDIzOSAtMzQgMzEwIC01MCAxNzIgLTQxIDM0MyAtNzggNDM1IC05NCA2OSAtMTIgNDUgLTEzIC0yOTEgLTE0IC00NzIgLTEgLTY2NiAxNiAtNjkxIDYyIC02IDEyIC0zNCA0NiAtNjIgNzUgbC01MSA1NCA4NSAtNyBjNDcgLTQgMTY2IC0xNSAyNjUgLTI2eiBtLTg1IC0xNTggYzI1IC02IDEzNyAtMTYgMjUwIC0yMiAxMTMgLTYgMjEyIC0xMyAyMjAgLTE2IDggLTMgLTU5IC0yMCAtMTUwIC0zOSAtMjM0IC00NyAtMzQyIC00NCAtNDA5IDExIC0yNyAyMyAtNTUgNzggLTQ1IDg4IDUgNCA1NyAtNCAxMzQgLTIyeiBtMjUwNyAtMTg4IGMtMyAtMTAgLTUgLTIgLTUgMTcgMCAxOSAyIDI3IDUgMTggMiAtMTAgMiAtMjYgMCAtMzV6Ii8+IDxwYXRoIGQ9Ik0yOTkyIDU4MTggYy0yNiAtMTg4IC0zNSAtMzM2IC0zNiAtNTczIC0xIC0yNjAgMiAtMjkwIDU1IC02MjEgMTYgLTk5IDM4IC0yNTkgNDkgLTM1NSA0NCAtMzY3IDY5IC02MDMgNjYgLTYwNiAtNiAtNiAtNjEgMjM5IC0xMTUgNTA3IC0yNyAxMzUgLTc3IDM3OCAtMTExIDU0MCAtNzUgMzU5IC0xMTIgNTYzIC0xMzYgNzM3IC0xMCA3MyAtMjAgMTMxIC0yMiAxMjggLTggLTcgMTggLTIyMCA0OSAtNDA1IDMzIC0xOTUgNzkgLTQzMiAxNDUgLTc0NCAyNCAtMTE1IDQ0IC0yMTQgNDMgLTIyMCAtMSAtMTcgLTEwMCAyODkgLTE5NCA1OTkgLTg0IDI4MCAtMTIzIDQyOCAtMTY2IDYyNCAtMTMgNTcgLTI1IDk5IC0yNyA5MyAtMiAtNiA2IC01NSAxOCAtMTA5IDU2IC0yNjIgMTM0IC01MzcgMjk2IC0xMDQzIDQyIC0xMjkgODQgLTI2MiA5NCAtMjk1IDE5IC02MSA2NiAtMjU1IDExNCAtNDcwIDM3IC0xNjUgMzcgLTE2NSAzMiAtMTY1IC0yIDAgLTMwIDgwIC02MSAxNzggLTE1MyA0NzUgLTM0OSA5NTEgLTYyMCAxNTA3IC0xMTYgMjM3IC0yMDAgNDI0IC0yMjQgNDk4IC03IDIxIC0xNSAzNyAtMTcgMzQgLTEwIC05IDU0IC0xNjcgMTkxIC00NjcgNDU4IC0xMDEwIDY0OSAtMTQ4OSA3NzAgLTE5MzUgMTkgLTcyIDMzIC0xMTEgMzAgLTg3IC0zIDIzIC0zIDQyIC0xIDQyIDE2IDAgNTEgLTE4OSA5MSAtNDk0IDkgLTY1IDIwIC0xMjggMjUgLTE0MCAxNSAtMzYgMTEgMTQwIC01IDI0OSAtOCA1NCAtMjAgMTgzIC0yNSAyODUgLTUgMTAyIC0xNCAyNjQgLTIwIDM2MCAtNiA5NiAtMTUgMjk0IC0yMCA0NDAgLTcgMTc2IC0xOCAzMjQgLTM1IDQ0MCBsLTI0IDE3NSA1IC0xMTAgYzIgLTYwIDExIC0yMjkgMTkgLTM3NSAxNiAtMjgyIDQ1IC05MTIgNDQgLTkzOSAwIC05IC0xOCA1NiAtMzkgMTQzIC00MyAxNzMgLTczIDM1OCAtOTAgNTU2IC0yNSAyODMgLTc0IDY2NCAtMTIxIDk1MCAtNDggMjg5IC01NiA2MzYgLTIzIDk4NCAxNiAxNzMgMTQgMjE2IC00IDg0eiIvPiA8cGF0aCBkPSJNMzU1MiA1NzgwIGMwIC0xNCAyIC0xOSA1IC0xMiAyIDYgMiAxOCAwIDI1IC0zIDYgLTUgMSAtNSAtMTN6Ii8+IDxwYXRoIGQ9Ik0yNzIyIDU3MTUgYzAgLTE2IDIgLTIyIDUgLTEyIDIgOSAyIDIzIDAgMzAgLTMgNiAtNSAtMSAtNSAtMTh6Ii8+IDxwYXRoIGQ9Ik0zNTQzIDU3MDAgYzAgLTI1IDIgLTM1IDQgLTIyIDIgMTIgMiAzMiAwIDQ1IC0yIDEyIC00IDIgLTQgLTIzeiIvPiA8cGF0aCBkPSJNMjczMiA1NjQwIGMwIC0xOSAyIC0yNyA1IC0xNyAyIDkgMiAyNSAwIDM1IC0zIDkgLTUgMSAtNSAtMTh6Ii8+IDxwYXRoIGQ9Ik0zNTMwIDU2MjEgYzAgLTE2IC0xNCAtMTEwIC0zMSAtMjA4IC0zMSAtMTgyIC00NyAtMzA2IC0zMCAtMjMzIDM4IDE1OCA4MiA0NzAgNjcgNDcwIC0zIDAgLTYgLTEzIC02IC0yOXoiLz4gPHBhdGggZD0iTTM0NTIgNTExNSBjMCAtMTYgMiAtMjIgNSAtMTIgMiA5IDIgMjMgMCAzMCAtMyA2IC01IC0xIC01IC0xOHoiLz4gPHBhdGggZD0iTTM0NDIgNTA1MCBjMCAtMTkgMiAtMjcgNSAtMTcgMiA5IDIgMjUgMCAzNSAtMyA5IC01IDEgLTUgLTE4eiIvPiA8cGF0aCBkPSJNMzQyNSA0OTE3IGMtNCAtNTMgLTUgLTEwMSAtMyAtMTA5IDMgLTcgOSAzMyAxMyA5MCA0IDU3IDUgMTA1IDIgMTA4IC0zIDMgLTggLTM3IC0xMiAtODl6Ii8+IDxwYXRoIGQ9Ik0zMjIxIDMwODQgYzAgLTExIDMgLTE0IDYgLTYgMyA3IDIgMTYgLTEgMTkgLTMgNCAtNiAtMiAtNSAtMTN6Ii8+IDxwYXRoIGQ9Ik0zMjMyIDMwNDAgYzAgLTE0IDQgLTM4IDggLTU1IDcgLTI3IDggLTI3IDggLTUgMCAxNCAtNCAzOSAtOCA1NSAtNyAyNyAtOCAyNyAtOCA1eiIvPiA8cGF0aCBkPSJNMzI1MiAyOTMwIGMwIC0xNCAyIC0xOSA1IC0xMiAyIDYgMiAxOCAwIDI1IC0zIDYgLTUgMSAtNSAtMTN6Ii8+IDxwYXRoIGQ9Ik0xMzM1IDQ5NzMgYzYgLTUgNTcgLTQzIDExNSAtODMgMTA1IC03NSAxODUgLTE0OSAzODQgLTM1OCAxMjggLTEzNiAxMjUgLTExOSAtNiAyOCAtMTMwIDE0NyAtMjM1IDI0OCAtMzI2IDMxMiAtNzQgNTMgLTE4OCAxMjIgLTE2NyAxMDF6Ii8+IDxwYXRoIGQ9Ik04OTQgNDM1NiBjMTEgLTkgMjQgLTE2IDMwIC0xNiAxMiAwIDcgNSAtMjQgMTkgLTI0IDExIC0yNCAxMSAtNiAtM3oiLz4gPHBhdGggZD0iTTg5NCA0MzI2IGMxMSAtOSAyNCAtMTYgMzAgLTE2IDEyIDAgNyA1IC0yNCAxOSAtMjQgMTEgLTI0IDExIC02IC0zeiIvPiA8cGF0aCBkPSJNOTgwIDQyODYgYzAgLTIgNyAtNyAxNiAtMTAgOCAtMyAxMiAtMiA5IDQgLTYgMTAgLTI1IDE0IC0yNSA2eiIvPiA8cGF0aCBkPSJNMTA0MCA0MjU3IGMwIC03IDEzMiAtNzkgMTM2IC03NCAyIDIgLTI4IDIwIC02NiA0MSAtMzkgMjAgLTcwIDM1IC03MCAzM3oiLz4gPHBhdGggZD0iTTExOTAgNDE3NiBjMCAtMyA5IC0xMCAyMCAtMTYgMTEgLTYgMjAgLTggMjAgLTYgMCAzIC05IDEwIC0yMCAxNiAtMTEgNiAtMjAgOCAtMjAgNnoiLz4gPHBhdGggZD0iTTEyNjAgNDEzNiBjMCAtNiAyMDEgLTEwMiAzMjUgLTE1NiA2MSAtMjYgMjA1IC04MiAzMjAgLTEyNCAzNzYgLTEzOCA0NDQgLTE2OCA1NzIgLTI1MiAxNjUgLTEwOSAzODIgLTM1MCA1MTUgLTU3NSAyOCAtNDkgNTQgLTg3IDU1IC04NSA1IDUgLTk5IDE4NCAtMTUwIDI2MSAtMTQwIDIwOCAtMzA3IDM3OCAtNDY2IDQ3NCAtNjggNDEgLTI4MSAxMzIgLTI5MyAxMjUgLTUgLTMgLTM0IDQgLTY2IDE1IC0zNjMgMTI2IC01MjcgMTkwIC02OTkgMjcxIC0xMDggNTEgLTExMyA1MyAtMTEzIDQ2eiIvPiA8cGF0aCBkPSJNODMwIDQxMjIgYzggLTUgMjYgLTEzIDQwIC0xNiAxNyAtNSAyMCAtNCAxMCAyIC04IDUgLTI2IDEzIC00MCAxNiAtMTcgNSAtMjAgNCAtMTAgLTJ6Ii8+IDxwYXRoIGQ9Ik05MDEgNDA5NiBjMTAgLTkgMTQ5IC03NiAxNDkgLTcxIDAgNSAtMTM2IDc1IC0xNDYgNzUgLTQgMCAtNSAtMiAtMyAtNHoiLz4gPHBhdGggZD0iTTEwNjUgMzc5NSBjMTcgLTggMzcgLTE0IDQ1IC0xNCA4IDAgLTEgNyAtMjAgMTQgLTQ2IDE4IC02NCAxNyAtMjUgMHoiLz4gPHBhdGggZD0iTTQwMTAgNTQzMCBjLTE3IC01MCAtMzAgLTkzIC0yOCAtOTYgMyAtMiAxOSAzNyAzNiA4OCAxOCA1MCAzMSA5MyAyOSA5NSAtMiAyIC0xOSAtMzcgLTM3IC04N3oiLz4gPHBhdGggZD0iTTQ2MjkgNTQyMyBjLTE5NiAtMjEwIC00ODkgLTY1NCAtNjY4IC0xMDExIC0xMDAgLTE5OSAtMjUwIC01NTMgLTMxNSAtNzQ0IC0yNSAtNzEgLTEwIC01NCAyNCAyOSAyMTAgNTEwIDMwMiA3MDcgNDQzIDk1NiAxODUgMzI0IDI5MiA0ODAgNTM2IDc3OCAzMyA0MSAyMiAzNiAtMjAgLTh6Ii8+IDxwYXRoIGQ9Ik00MTA2IDUyNzggYy03NCAtMjM0IC0xNDUgLTQ2MCAtMTY2IC01MzMgLTI1IC04MyAtNTAgLTE2NSAtMTA1IC0zNDAgLTUxIC0xNjEgLTE0MiAtNDYxIC0xODAgLTU5MCAtMjQgLTgwIC0yOCAtMTE5IC01IC00OCA2MiAxOTMgMjMyIDY0NCAzMzYgODkzIDc2IDE4MSAxNzggMzQ3IDMzNyA1NDggNDkgNjMgODcgMTE1IDg1IDExNyAtNCA0IC0xMTggLTEyOSAtMTgwIC0yMTEgLTEyMyAtMTYyIC0yMTUgLTMzNSAtMzI5IC02MjIgLTQwIC0xMDAgLTc0IC0xODEgLTc2IC0xNzkgLTggOSAxMDIgMzExIDE0OCA0MDUgNjAgMTIzIDIwOSAzOTggMjg2IDUyNyAyOSA1MCA0MiA3NyAyOCA2MCAtMzMgLTQwIC0xODYgLTI5OCAtMjcwIC00NTUgLTY0IC0xMjEgLTc3IC0xMzEgLTI5IC0yMSAxMyAyOSAyNCA2NCAyNCA3NiAwIDEzIDM0IDEzMyA3NiAyNjcgOTQgMzAxIDg3IDI3OCA4MSAyNzggLTMgMCAtMzAgLTc4IC02MSAtMTcyeiIvPiA8cGF0aCBkPSJNNDMzOSA1MzgzIGMtMTMgLTE2IC0xMiAtMTcgNCAtNCA5IDcgMTcgMTUgMTcgMTcgMCA4IC04IDMgLTIxIC0xM3oiLz4gPHBhdGggZD0iTTM5NTYgNTI3NCBjLTkgLTI2IC0xNiAtNTIgLTE1IC01OCAwIC02IDkgMTMgMjAgNDMgMTAgMzAgMTcgNTYgMTUgNTggLTIgMiAtMTEgLTE3IC0yMCAtNDN6Ii8+IDxwYXRoIGQ9Ik00NzQ5IDQ5NjMgYy0xMyAtMTYgLTEyIC0xNyA0IC00IDkgNyAxNyAxNSAxNyAxNyAwIDggLTggMyAtMjEgLTEzeiIvPiA8cGF0aCBkPSJNNTM3OCA0OTMxIGMtMTI0IC03MiAtMjQzIC0xNjAgLTUwOSAtMzczIC0yOTcgLTIzOCAtMzUyIC0yODUgLTQ4OCAtNDA3IC0xNTMgLTEzOSAtNDM4IC00NzIgLTU1NCAtNjQ4IC02MyAtOTYgLTE4NCAtMzEzIC0xNzQgLTMxMyAzIDAgMjcgMzkgNTMgODggMTk1IDM1OCA1MTUgNzE1IDEwMTkgMTEzOCAzNjcgMzA4IDUwMyA0MTIgNjcxIDUxMyAzNyAyMyA2MyA0MSA1OCA0MSAtNSAwIC0zOSAtMTcgLTc2IC0zOXoiLz4gPHBhdGggZD0iTTU1MDAgNDcxMCBjLTggLTUgLTEwIC0xMCAtNSAtMTAgNiAwIDE3IDUgMjUgMTAgOCA1IDExIDEwIDUgMTAgLTUgMCAtMTcgLTUgLTI1IC0xMHoiLz4gPHBhdGggZD0iTTUzNDUgNDYzNCBjLTY2IC0zNiAtMTI3IC03MyAtMTM1IC04MSAtOCAtOSA1IC00IDMwIDEwIDI1IDE1IDkxIDUxIDE0NSA4MiA1NSAzMCA5NSA1NSA5MCA1NSAtNiAwIC02NCAtMzAgLTEzMCAtNjZ6Ii8+IDxwYXRoIGQ9Ik01MDc0IDQ0NzIgYy0zNDMgLTIxMyAtNzA4IC01MTIgLTEwMzUgLTg0OCAtMTk0IC0yMDAgLTMxNCAtMzU0IC00MTggLTUzNCAtMzIgLTU1IC02MSAtOTcgLTY1IC05MyAtMyAzIC02IDEgLTYgLTYgMCAtNyAtMjAgLTYwIC00NSAtMTE3IC01OSAtMTM1IC01NyAtMTQ2IDQgLTE5IDYwIDEyNyAxNzcgMzE1IDI3NyA0NDcgOTYgMTI3IDM1OCAzODggNjUxIDY1MSAzMjUgMjkyIDQ0MCAzODEgNzM5IDU3NCAxMSA2IDE2IDEyIDEzIDEyIC0zIDEgLTU1IC0zMCAtMTE1IC02N3oiLz4gPHBhdGggZD0iTTU4MjAgNDQwMCBjLTggLTUgLTEwIC0xMCAtNSAtMTAgNiAwIDE3IDUgMjUgMTAgOCA1IDExIDEwIDUgMTAgLTUgMCAtMTcgLTUgLTI1IC0xMHoiLz4gPHBhdGggZD0iTTUyNTggNDM2NCBjLTM4IC0yMCAtMzYgLTI4IDIgLTkgMTcgOSAzMCAxOCAzMCAyMCAwIDcgLTEgNiAtMzIgLTExeiIvPiA8cGF0aCBkPSJNNTY0MCA0MzIwIGMtOSAtNiAtMTAgLTEwIC0zIC0xMCA2IDAgMTUgNSAxOCAxMCA4IDEyIDQgMTIgLTE1IDB6Ii8+IDxwYXRoIGQ9Ik01NTUwIDQyODAgYy0xOSAtMTEgLTMxIC0xOSAtMjcgLTIwIDExIDAgNjcgMjkgNjcgMzUgMCA3IC0xIDcgLTQwIC0xNXoiLz4gPHBhdGggZD0iTTU2MjUgNDExNiBjLTM2MiAtMTI3IC02NzcgLTI3MyAtOTU1IC00NDQgLTM2NSAtMjI1IC02MzggLTQxNCAtNzUwIC01MjEgLTQxIC0zOCAtMjggLTMwIDUwIDMxIDU4IDQ2IDE3OSAxMzAgMjcwIDE4OCA5MSA1NyAyNDQgMTU0IDM0MCAyMTUgNDE0IDI2MyA2NzAgMzg5IDEwNjggNTI2IDk3IDMzIDE3OCA2MiAxODEgNjQgMTMgMTQgLTQxIC0yIC0yMDQgLTU5eiIvPiA8cGF0aCBkPSJNNTg1OCA0MDAzIGM3IC0zIDE2IC0yIDE5IDEgNCAzIC0yIDYgLTEzIDUgLTExIDAgLTE0IC0zIC02IC02eiIvPiA8cGF0aCBkPSJNNTgwOCAzOTkzIGM2IC0yIDE4IC0yIDI1IDAgNiAzIDEgNSAtMTMgNSAtMTQgMCAtMTkgLTIgLTEyIC01eiIvPiA8cGF0aCBkPSJNNTY0MCAzOTYwIGMtMjAgLTYgLTIxIC04IC01IC04IDExIDAgMjkgMyA0MCA4IDI1IDExIC0xIDExIC0zNSAweiIvPiA8cGF0aCBkPSJNNTQ0NyAzOTEwIGMtMjE0IC02MyAtMzkwIC0xMzEgLTU1MSAtMjEyIC0xMjcgLTY0IC01NDEgLTMwNCAtNjYxIC0zODIgLTI4NyAtMTkwIC00MDkgLTI2NyAtMzkyIC0yNDkgOSAxMSAxNyAyNCAxNyAyOSAwIDIyIC0yNzEgLTI2OSAtMjk0IC0zMTYgLTQgLTggMiAtNCAxNCAxMCA5OCAxMTMgMTI4IDE0NCAxODcgMTkzIDExMyA5MiA2MjIgNDE3IDc2MyA0ODcgMzYgMTggMTQzIDc1IDIzNyAxMjcgMjM0IDEyOSA0MjQgMjE0IDYzMyAyODQgMTg1IDYxIDIxMCA3NyA0NyAyOXoiLz4gPHBhdGggZD0iTTU2ODggMzgwMyBjNyAtMyAxNiAtMiAxOSAxIDQgMyAtMiA2IC0xMyA1IC0xMSAwIC0xNCAtMyAtNiAtNnoiLz4gPHBhdGggZD0iTTUyNDUgMzcxNSBjLTM5IC0xNCAtNDAgLTE0IC01IC04IDQxIDcgODIgMjIgNjAgMjIgLTggMCAtMzMgLTcgLTU1IC0xNHoiLz4gPHBhdGggZD0iTTUwNTAgMzY2MCBjLTYzIC0yMCAtMTQ2IC00OSAtMTgzIC02MyAtODUgLTMzIC00MzggLTE5OSAtNDMzIC0yMDQgMiAtMiA4OCAzMyAxOTIgNzcgMzA5IDEzMiAzMjQgMTM4IDQ1NCAxODUgMTUyIDU0IDEzMCA1OCAtMzAgNXoiLz4gPHBhdGggZD0iTTU3MDUgMzY0MCBjLTQyIC0xMSAtMSAtMTEgNTAgLTEgMzQgNyAzNSA5IDEwIDkgLTE2IDAgLTQzIC00IC02MCAtOHoiLz4gPHBhdGggZD0iTTU2MzMgMzYyMyBjOSAtMiAyMyAtMiAzMCAwIDYgMyAtMSA1IC0xOCA1IC0xNiAwIC0yMiAtMiAtMTIgLTV6Ii8+IDxwYXRoIGQ9Ik01NTQ4IDM2MTMgYzYgLTIgMTggLTIgMjUgMCA2IDMgMSA1IC0xMyA1IC0xNCAwIC0xOSAtMiAtMTIgLTV6Ii8+IDxwYXRoIGQ9Ik01NDEwIDM1OTUgYy0zNiAtNyAtNTQgLTEzIC00MCAtMTMgMTQgMCA1NyA1IDk1IDEyIDM5IDggNTcgMTQgNDAgMTQgLTE2IDAgLTU5IC02IC05NSAtMTN6Ii8+IDxwYXRoIGQ9Ik01MzAzIDM1NzMgYzkgLTIgMjMgLTIgMzAgMCA2IDMgLTEgNSAtMTggNSAtMTYgMCAtMjIgLTIgLTEyIC01eiIvPiA8cGF0aCBkPSJNNTE3NSAzNTU1IGMtMzMgLTcgLTUxIC0xMyAtNDAgLTEzIDExIC0xIDQ5IDUgODUgMTIgMzYgOCA1NCAxNCA0MCAxNCAtMTQgMCAtNTIgLTYgLTg1IC0xM3oiLz4gPHBhdGggZD0iTTQ5NDAgMzUxMCBjLTY5IC0xNiAtMTU5IC00MCAtMjAwIC01NCAtODQgLTI5IC03NCAtMjcgOTAgMTQgNjMgMTYgMTUzIDM4IDIwMCA0OSA0NyAxMCA3NCAxOSA2MCAxOSAtMTQgMCAtODEgLTEzIC0xNTAgLTI4eiIvPiA8cGF0aCBkPSJNMzYzNSAzMTY5IGMtNCAtNiAtNSAtMTIgLTIgLTE1IDIgLTMgNyAyIDEwIDExIDcgMTcgMSAyMCAtOCA0eiIvPiA8L2c+IDwvc3ZnPg==";
 const ADMINS = ["1158242449", "1165286823"];
@@ -90,7 +120,7 @@ function Login({ onLogin }) {
     if(celGuardado && celGuardado.length >= 8) {
       const num = celGuardado.replace(/\s/g,"").replace(/-/g,"");
       if(ADMINS.includes(num)) { onLogin("admin", null); return; }
-      supabase.from("pacientes").select("*").eq("celular", num).single().then(({ data }) => {
+      api.get("pacientes.php", { celular: num }).then(data => {
         if(data && data.estado === "aprobado") onLogin("paciente", data);
       });
     }
@@ -102,7 +132,7 @@ function Login({ onLogin }) {
     setLoad(true);
     if(recordar) { localStorage.setItem("ms_cel", cel); } else { localStorage.removeItem("ms_cel"); }
     if(ADMINS.includes(num)) { setLoad(false); onLogin("admin", null); return; }
-    const { data } = await supabase.from("pacientes").select("*").eq("celular", num).single();
+    const data = await api.get("pacientes.php", { celular: num });
     setLoad(false);
     if(!data) { setPaso(2); return; }
     if(data.estado === "pendiente") { setPendiente(true); return; }
@@ -113,7 +143,7 @@ function Login({ onLogin }) {
     if(nombre.length < 2 || apellido.length < 2) return;
     const num = cel.replace(/\s/g,"").replace(/-/g,"");
     setLoad(true);
-    await supabase.from("pacientes").insert([{ nombre, apellido, celular:num, estado:"pendiente" }]);
+    await api.post("pacientes.php", { nombre, apellido, celular:num, estado:"pendiente" });
     setLoad(false);
     setSolicitado(true);
     setTimeout(() => setPendiente(true), 1500);
@@ -187,8 +217,7 @@ function TurnosDisponibles({ paciente }) {
   const [load, setLoad] = useState(false);
 
   useEffect(() => {
-    const hoy = new Date().toISOString().split("T")[0];
-    supabase.from("disponibilidad").select("*").eq("ocupado", false).gte("fecha", hoy).order("fecha").order("hora").then(({ data }) => { if(data) setSlots(data); });
+    api.get("disponibilidad.php", { ocupado: 0 }).then(data => { if(data) setSlots(data); });
   }, []);
 
   const porFecha = slots.reduce((acc, sl) => { (acc[sl.fecha]=acc[sl.fecha]||[]).push(sl); return acc; }, {});
@@ -199,8 +228,8 @@ function TurnosDisponibles({ paciente }) {
     const fechaSel = Object.keys(porFecha)[dIdx];
     const slotsDia = Object.values(porFecha)[dIdx];
     const slotSel = slotsDia?.find(sl => sl.hora.slice(0,5) === horaSelec.slice(0,5));
-    await supabase.from("turnos").insert([{ paciente_id: paciente?.id || null, fecha: fechaSel, hora: horaSelec, estado:"pendiente", mensaje: mensaje||null }]);
-    if(slotSel) await supabase.from("disponibilidad").update({ ocupado:true }).eq("id", slotSel.id);
+    await api.post("turnos.php", { paciente_id: paciente?.id || null, fecha: fechaSel, hora: horaSelec, estado:"pendiente", mensaje: mensaje||null });
+    if(slotSel) await api.put("disponibilidad.php", slotSel.id, { ocupado: true });
     setLoad(false);
     setOk(true);
   };
@@ -274,12 +303,12 @@ function MisTurnos({ paciente }) {
   useEffect(() => {
     const cargar = async () => {
       if(!paciente?.id) return;
-      const { data } = await supabase.from("turnos").select("*").eq("paciente_id", paciente.id).order("fecha").order("hora");
+      const data = await api.get("turnos.php", { paciente_id: paciente.id });
       if(data) setTurnos(data);
     };
     cargar();
-    const canal = supabase.channel("mis-turnos").on("postgres_changes", { event:"*", schema:"public", table:"turnos" }, ()=>cargar()).subscribe();
-    return () => supabase.removeChannel(canal);
+    const interval = setInterval(cargar, 30000);
+    return () => clearInterval(interval);
   }, [paciente]);
 
   if(det) return (
@@ -338,45 +367,45 @@ function AdminTurnos() {
   const [busqueda, setBusqueda] = useState("");
 
   const cargar = async () => {
-    const { data: dataTurnos } = await supabase.from("turnos").select("*").order("fecha").order("hora");
-    const { data: dataPacs } = await supabase.from("pacientes").select("id, nombre, apellido, celular");
-    const pacsMap = {};
-    if(dataPacs) dataPacs.forEach(p => { pacsMap[p.id] = p; });
-    const merged = (dataTurnos||[]).map(t => ({ ...t, pacienteData: t.paciente_id ? pacsMap[t.paciente_id]||null : null }));
-    setTurnos(merged);
+    const data = await api.get("turnos.php");
+    setTurnos(data || []);
     setLoad(false);
   };
 
   useEffect(() => {
     cargar();
-    const canal = supabase.channel("admin-turnos").on("postgres_changes", { event:"*", schema:"public", table:"turnos" }, ()=>cargar()).subscribe();
-    return () => supabase.removeChannel(canal);
+    const interval = setInterval(cargar, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const liberar = async (trn) => {
-    await supabase.from("turnos").delete().eq("id", trn.id);
-    // Liberar el slot en disponibilidad
-    await supabase.from("disponibilidad").update({ ocupado:false }).eq("fecha", trn.fecha).eq("hora", trn.hora);
+    await api.delete("turnos.php", trn.id);
+    // Buscar slot para liberar
+    const slots = await api.get("disponibilidad.php");
+    const slot = (slots||[]).find(s => s.fecha===trn.fecha && s.hora.slice(0,5)===trn.hora.slice(0,5));
+    if(slot) await api.put("disponibilidad.php", slot.id, { ocupado: false });
     await cargar();
     setSel(null);
   };
 
   const eliminar = async (trn) => {
-    await supabase.from("turnos").delete().eq("id", trn.id);
-    await supabase.from("disponibilidad").delete().eq("fecha", trn.fecha).eq("hora", trn.hora);
+    await api.delete("turnos.php", trn.id);
+    const slots2 = await api.get("disponibilidad.php");
+    const slot2 = (slots2||[]).find(s => s.fecha===trn.fecha && s.hora.slice(0,5)===trn.hora.slice(0,5));
+    if(slot2) await api.delete("disponibilidad.php", slot2.id);
     await cargar();
     setSel(null);
   };
 
   const guardarEdicion = async () => {
-    await supabase.from("turnos").update({ fecha:editFecha, hora:editHora, estado:editEstado }).eq("id", sel.id);
+    await api.put("turnos.php", sel.id, { fecha:editFecha, hora:editHora, estado:editEstado });
     await cargar();
     setEditando(false);
     setSel(null);
   };
 
   const asignarPaciente = async (pac) => {
-    await supabase.from("turnos").update({ paciente_id: pac.id }).eq("id", sel.id);
+    await api.put("turnos.php", sel.id, { paciente_id: pac.id });
     await cargar();
     setAsignando(false);
     setSel(null);
@@ -384,8 +413,8 @@ function AdminTurnos() {
 
   const crearYAsignar = async (pac) => {
     // Admin assigns a slot directly to a patient
-    await supabase.from("turnos").insert([{ paciente_id: pac.id, fecha: sel.fecha, hora: sel.hora, estado:"pendiente" }]);
-    await supabase.from("disponibilidad").update({ ocupado:true }).eq("id", sel.id);
+    await api.post("turnos.php", { paciente_id: pac.id, fecha: sel.fecha, hora: sel.hora, estado:"pendiente" });
+    await api.put("disponibilidad.php", sel.id, { ocupado: true });
     await cargar();
     setAsignando(false);
     setSel(null);
@@ -479,7 +508,7 @@ function AdminTurnos() {
             onClick={()=>{setEditFecha(sel.fecha);setEditHora(sel.hora?.slice(0,5));setEditEstado(sel.estado||"pendiente");setEditando(true);}}>
             <IcoSVG name="edit" size={14} color="#2C2420"/> Editar
           </button>
-          <button style={{...S.btnG, flex:1}} onClick={async()=>{const{data}=await supabase.from("pacientes").select("*").eq("estado","aprobado");if(data)setPacientes(data);setBusqueda("");setAsignando(true);}}>
+          <button style={{...S.btnG, flex:1}} onClick={async()=>{const data=await api.get("pacientes.php",{estado:"aprobado"});if(data)setPacientes(data);setBusqueda("");setAsignando(true);}}>
             Asignar
           </button>
         </div>
@@ -553,33 +582,32 @@ function AdminHorarios() {
   const [asignando, setAsignando] = useState(false);
 
   useEffect(() => {
-    const hoy = new Date().toISOString().split("T")[0];
-    supabase.from("disponibilidad").select("*").gte("fecha", hoy).order("fecha").order("hora").then(({ data }) => { if(data) setSlots(data); });
+    api.get("disponibilidad.php").then(data => { if(data) setSlots(data); });
   }, []);
 
   const agregar = async () => {
     if(!fecha || !hora) return;
-    const { data, error } = await supabase.from("disponibilidad").insert([{ fecha, hora, ocupado:false }]).select().single();
-    if(error) { alert("Error: " + error.message); return; }
-    if(data) { setSlots(prev => [...prev, data]); setModal(false); setFecha(""); setHora(""); }
+    const data = await api.post("disponibilidad.php", { fecha, hora, ocupado: false });
+    if(data?.id) { setSlots(prev => [...prev, data]); setModal(false); setFecha(""); setHora(""); }
+    else { alert("Error al guardar"); }
   };
 
   const eliminar = async (id) => {
-    await supabase.from("disponibilidad").delete().eq("id", id);
+    await api.delete("disponibilidad.php", id);
     setSlots(slots.filter(sl => sl.id !== id));
   };
 
   const abrirAsignar = async (sl) => {
     setSlotSel(sl);
-    const { data } = await supabase.from("pacientes").select("*").eq("estado","aprobado").order("apellido");
+    const data = await api.get("pacientes.php", { estado: "aprobado" });
     if(data) setPacientes(data);
     setBusqueda("");
     setAsignando(true);
   };
 
   const asignarPaciente = async (pac) => {
-    await supabase.from("turnos").insert([{ paciente_id: pac.id, fecha: slotSel.fecha, hora: slotSel.hora, estado:"pendiente" }]);
-    await supabase.from("disponibilidad").update({ ocupado:true }).eq("id", slotSel.id);
+    await api.post("turnos.php", { paciente_id: pac.id, fecha: slotSel.fecha, hora: slotSel.hora, estado:"pendiente" });
+    await api.put("disponibilidad.php", slotSel.id, { ocupado: true });
     setSlots(slots.map(sl => sl.id===slotSel.id ? {...sl, ocupado:true} : sl));
     setAsignando(false);
     setSlotSel(null);
@@ -688,31 +716,31 @@ function AdminPacientes() {
 
   const verPaciente = async (pac) => {
     setDetPac(pac);
-    const { data } = await supabase.from("turnos").select("*").eq("paciente_id", pac.id).order("fecha", { ascending:false });
+    const data = await api.get("turnos.php", { paciente_id: pac.id });
     if(data) setTurnosPac(data);
   };
 
   const cargar = async () => {
-    const { data } = await supabase.from("pacientes").select("*").order("apellido");
+    const data = await api.get("pacientes.php");
     if(data) setPacientes(data);
   };
 
   const aprobar = async (id) => {
-    await supabase.from("pacientes").update({ estado:"aprobado" }).eq("id", id);
+    await api.put("pacientes.php", id, { estado:"aprobado" });
     await cargar();
   };
 
   const rechazar = async (id) => {
-    await supabase.from("pacientes").delete().eq("id", id);
+    await api.delete("pacientes.php", id);
     await cargar();
   };
 
   const agregar = async () => {
     if(!nuevoCel || nuevoCel.length < 8) return;
     setLoad(true);
-    const { error } = await supabase.from("pacientes").insert([{ celular:nuevoCel.replace(/\s/g,""), nombre:nuevoNombre, apellido:nuevoApellido, estado:"aprobado" }]);
+    const result = await api.post("pacientes.php", { celular:nuevoCel.replace(/\s/g,""), nombre:nuevoNombre, apellido:nuevoApellido, estado:"aprobado" });
     setLoad(false);
-    if(error) { alert("Error: " + error.message); return; }
+    if(!result?.id) { alert("Error al guardar"); return; }
     setModal(false); setNuevoCel(""); setNuevoNombre(""); setNuevoApellido("");
     await cargar();
   };
